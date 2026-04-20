@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#4CAF50">
+    <title>Separador de Times - Futebol</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+    <link rel="shortcut icon" href="favicon.ico">
+    <link rel="manifest" href="manifest.json">
+    <meta name="msapplication-TileColor" content="#4CAF50">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-app-compat.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-database-compat.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="loading" id="loadingScreen">
+        <div class="spinner"></div>
+        <h2>Carregando Dados...</h2>
+        <p>Sincronizando com a nuvem</p>
+    </div>
+
+    <div class="sync-status" id="syncStatus" style="display: none;">🟢 Sincronizado</div>
+
+    <div class="container" id="mainApp" style="display: none;">
+
+        <div class="header">
+            <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+            <div class="header-title">
+                <h1>⚽ Separador de Times</h1>
+                <p>Compartilhado com o grupo</p>
+            </div>
+            <div style="width: 48px;"></div>
+        </div>
+
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div><h3>Menu</h3><p>Navegação</p></div>
+                <button class="close-btn" onclick="closeSidebar()">✕</button>
+            </div>
+            <div class="sidebar-menu">
+                <button class="menu-item active" onclick="showSection('separar')">
+                    <span class="menu-icon">⚽</span><span>Separar Times</span>
+                </button>
+                <button class="menu-item" onclick="showSection('historico')">
+                    <span class="menu-icon">📜</span><span>Histórico de Times</span>
+                </button>
+                <button class="menu-item" onclick="showSection('financeiro')">
+                    <span class="menu-icon">💰</span><span>Controle Financeiro</span>
+                </button>
+                <button class="menu-item" onclick="showSection('jogadores')">
+                    <span class="menu-icon">👥</span><span>Gerenciar Jogadores</span>
+                </button>
+                <button class="menu-item" onclick="showSection('cadastro')">
+                    <span class="menu-icon">➕</span><span>Cadastrar Jogador</span>
+                </button>
+            </div>
+            <div style="padding: 15px; border-top: 1px solid #e0e0e0; margin-top: auto;">
+                <div id="sidebarSyncStatus" style="font-size: 12px; color: #666; display: flex; align-items: center; gap: 8px;">
+                    🟢 Sincronizado
+                </div>
+            </div>
+        </div>
+
+        <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+        <div class="main-content">
+
+            <!-- SEPARAR TIMES -->
+            <div id="separar" class="content-section active">
+                <h2>⚽ Quem está presente?</h2>
+                <p style="color: #666; margin-bottom: 15px;">Marque os jogadores presentes:</p>
+
+                <div class="search-filter-sticky">
+                    <div class="search-container">
+                        <input type="text" id="searchJogador" placeholder="🔍 Pesquisar jogador..." oninput="filtrarJogadores()">
+                        <button class="clear-search-btn" id="clearSearchBtn" onclick="limparPesquisa()" style="display: none;">✕</button>
+                    </div>
+                    <div class="compact-filters">
+                        <select id="teamCount">
+                            <option value="2">2 Times</option>
+                            <option value="3" selected>3 Times</option>
+                            <option value="4">4 Times</option>
+                            <option value="auto">Auto</option>
+                        </select>
+                        <select id="sortOrder" onchange="atualizarOrdenacao()">
+                            <option value="alfabetica-az">A-Z</option>
+                            <option value="alfabetica-za">Z-A</option>
+                            <option value="estrelas-maior">⭐↓</option>
+                            <option value="estrelas-menor">⭐↑</option>
+                        </select>
+                        <div class="selected-counter"><span id="totalSelecionados">0</span></div>
+                    </div>
+                    <div class="quick-actions">
+                        <button class="quick-action-btn mensalistas" onclick="marcarTodosMensalistas()">✓ Mensalistas</button>
+                        <button class="quick-action-btn avulsos" onclick="marcarTodosAvulsos()">✓ Avulsos</button>
+                        <button class="quick-action-btn limpar" onclick="limparTodosCheckbox()">✕ Limpar</button>
+                    </div>
+                </div>
+
+                <div id="jogadoresPresentes"></div>
+
+                <div style="text-align: center; margin: 25px 0;">
+                    <button class="btn btn-full" onclick="separarTimes()" style="font-size: 17px;">🎯 Separar Times</button>
+                </div>
+
+                <div class="balance-info" id="balanceInfo" style="display: none;"></div>
+                <div class="teams-container" id="teamsContainer" style="display: none;"></div>
+
+                <button class="fab-button" onclick="abrirCadastroRapido()" title="Adicionar jogador rapidamente">➕</button>
+            </div>
+
+            <!-- MODAL CADASTRO RÁPIDO -->
+            <div id="quickAddModal" class="quick-add-modal">
+                <div class="quick-add-content">
+                    <h3>➕ Cadastro Rápido</h3>
+                    <div class="form-group">
+                        <label for="quickNome">Nome do Jogador:</label>
+                        <input type="text" id="quickNome" placeholder="Digite o nome">
+                    </div>
+                    <div class="form-group">
+                        <label for="quickEstrelas">Nível de Habilidade:</label>
+                        <select id="quickEstrelas">
+                            <option value="1">⭐ 1</option><option value="2">⭐⭐ 2</option>
+                            <option value="3">⭐⭐⭐ 3</option><option value="4">⭐⭐⭐⭐ 4</option>
+                            <option value="5" selected>⭐⭐⭐⭐⭐ 5</option><option value="6">⭐⭐⭐⭐⭐⭐ 6</option>
+                            <option value="7">⭐⭐⭐⭐⭐⭐⭐ 7</option><option value="8">⭐⭐⭐⭐⭐⭐⭐⭐ 8</option>
+                            <option value="9">⭐⭐⭐⭐⭐⭐⭐⭐⭐ 9</option><option value="10">⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐ 10</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="quickTipo">Tipo:</label>
+                        <select id="quickTipo">
+                            <option value="mensalista">Mensalista</option>
+                            <option value="avulso">Avulso</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="quickJaSelecionar" checked style="width: auto; margin-right: 8px;">
+                            Já marcar como presente
+                        </label>
+                    </div>
+                    <div class="modal-actions">
+                        <button class="btn" id="btnQuickAdd" onclick="cadastrarRapido()">➕ Cadastrar</button>
+                        <button class="btn" onclick="fecharCadastroRapido()" style="background: #666;">❌ Cancelar</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- HISTÓRICO -->
+            <div id="historico" class="content-section">
+                <h2>📜 Histórico de Times</h2>
+                <p style="color: #666; margin-bottom: 20px;">Veja os times separados anteriormente:</p>
+                <div id="listaHistorico"></div>
+            </div>
+
+            <!-- FINANCEIRO -->
+            <div id="financeiro" class="content-section">
+                <h2>💰 Controle Financeiro</h2>
+                <p style="color: #666; margin-bottom: 20px;">Gerencie pagamentos dos jogadores avulsos:</p>
+                <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid #e0e0e0;">
+                    <button class="btn" id="tabSessoes" onclick="mostrarAbaFinanceiro('sessoes')" style="background: #4CAF50; margin: 0; border-radius: 0; border-bottom: 3px solid #4CAF50;">Sessões de Jogo</button>
+                    <button class="btn" id="tabPendencias" onclick="mostrarAbaFinanceiro('pendencias')" style="background: #666; margin: 0; border-radius: 0;">Pendências</button>
+                    <button class="btn" id="tabPagamentos" onclick="mostrarAbaFinanceiro('pagamentos')" style="background: #666; margin: 0; border-radius: 0;">Controle de Pagamentos</button>
+                </div>
+                <div id="abaFinanceiroSessoes" class="aba-financeiro"><div id="listaSessoes"></div></div>
+                <div id="abaFinanceiroPendencias" class="aba-financeiro" style="display: none;"><div id="resumoPendencias"></div></div>
+                <div id="abaFinanceiroPagamentos" class="aba-financeiro" style="display: none;"><div id="controlePagamentos"></div></div>
+            </div>
+
+            <!-- JOGADORES -->
+            <div id="jogadores" class="content-section">
+                <h2>👥 Gerenciar Jogadores</h2>
+                <p style="color: #666; margin-bottom: 15px;">Total: <span id="totalJogadores">0</span> jogadores cadastrados</p>
+                <button class="btn btn-restrictions btn-full" onclick="abrirModalRestricoes()">🚫 Configurar Restrições entre Jogadores</button>
+                <div class="filter-controls">
+                    <div class="filter-row">
+                        <label for="sortOrderJogadores">Ordenar por:</label>
+                        <select id="sortOrderJogadores" onchange="atualizarOrdenacaoJogadores()">
+                            <option value="alfabetica-az">Nome (A-Z)</option>
+                            <option value="alfabetica-za">Nome (Z-A)</option>
+                            <option value="estrelas-maior">Estrelas (Maior-Menor)</option>
+                            <option value="estrelas-menor">Estrelas (Menor-Maior)</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="listaJogadores"></div>
+            </div>
+
+            <!-- CADASTRO -->
+            <div id="cadastro" class="content-section">
+                <div class="info-banner">
+                    <h4>🌐 Dados Compartilhados</h4>
+                    <p>Todos do grupo podem ver e editar os jogadores em tempo real!</p>
+                </div>
+                <h2>➕ Cadastrar Novo Jogador</h2>
+                <div class="form-group">
+                    <label for="nomeJogador">Nome do Jogador:</label>
+                    <input type="text" id="nomeJogador" placeholder="Digite o nome do jogador">
+                </div>
+                <div class="form-group">
+                    <label for="estrelas">Nível de Habilidade:</label>
+                    <select id="estrelas">
+                        <option value="1">⭐ 1 Estrela</option><option value="2">⭐⭐ 2 Estrelas</option>
+                        <option value="3">⭐⭐⭐ 3 Estrelas</option><option value="4">⭐⭐⭐⭐ 4 Estrelas</option>
+                        <option value="5">⭐⭐⭐⭐⭐ 5 Estrelas</option><option value="6">⭐⭐⭐⭐⭐⭐ 6 Estrelas</option>
+                        <option value="7">⭐⭐⭐⭐⭐⭐⭐ 7 Estrelas</option><option value="8">⭐⭐⭐⭐⭐⭐⭐⭐ 8 Estrelas</option>
+                        <option value="9">⭐⭐⭐⭐⭐⭐⭐⭐⭐ 9 Estrelas</option><option value="10">⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐ 10 Estrelas</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="tipoJogador">Tipo de Jogador:</label>
+                    <select id="tipoJogador">
+                        <option value="mensalista">Mensalista</option>
+                        <option value="avulso">Avulso</option>
+                    </select>
+                </div>
+                <button class="btn btn-full" id="btnCadastrar" onclick="cadastrarJogador()">➕ Cadastrar Jogador</button>
+            </div>
+
+        </div><!-- /main-content -->
+
+        <!-- MODAIS -->
+
+        <div id="aprovacaoModal" class="edit-modal">
+            <div class="edit-modal-content">
+                <div class="aprovacao-header">
+                    <h3>⚽ Confirmar Distribuição</h3>
+                    <p>Verifique se os times estão equilibrados</p>
+                </div>
+                <div class="aprovacao-body">
+                    <div class="teams-preview" id="teamsPreview"></div>
+                </div>
+                <div class="aprovacao-footer">
+                    <div class="aprovacao-actions-row">
+                        <button class="btn" onclick="confirmarDistribuicao()">✅ Confirmar</button>
+                        <button class="btn btn-danger" onclick="refazerDistribuicao()">🔄 Refazer</button>
+                    </div>
+                    <button class="btn btn-full" onclick="cancelarAprovacao()" style="background: #666;">❌ Cancelar</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="sessaoModal" class="edit-modal">
+            <div class="edit-modal-content">
+                <h3>💰 Registrar Sessão de Jogo</h3>
+                <div class="form-group">
+                    <label for="dataSessao">Data:</label>
+                    <input type="date" id="dataSessao" readonly style="background: #f5f5f5;">
+                </div>
+                <div class="form-group">
+                    <label for="valorDiaria">Valor da Diária (R$):</label>
+                    <input type="number" id="valorDiaria" value="15.00" step="0.01" placeholder="15.00">
+                </div>
+                <div class="form-group">
+                    <label>Todos os Jogadores Presentes:</label>
+                    <div id="todosPresentes" style="background: #f8f9fa; padding: 15px; border-radius: 8px; max-height: 200px; overflow-y: auto;"></div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn" onclick="salvarSessao()">💾 Registrar Sessão</button>
+                    <button class="btn" onclick="pularRegistroSessao()" style="background: #666;">⏭️ Pular</button>
+                </div>
+                <button class="btn btn-full" onclick="fecharSessaoModal()" style="margin-top: 10px; background: #666;">❌ Cancelar</button>
+            </div>
+        </div>
+
+        <div id="editModal" class="edit-modal">
+            <div class="edit-modal-content">
+                <h3>✏️ Editar Jogador</h3>
+                <div class="form-group">
+                    <label for="editNome">Nome:</label>
+                    <input type="text" id="editNome" readonly style="background: #f5f5f5;">
+                </div>
+                <div class="form-group">
+                    <label for="editEstrelas">Nível de Habilidade:</label>
+                    <select id="editEstrelas">
+                        <option value="1">⭐ 1 Estrela</option><option value="2">⭐⭐ 2 Estrelas</option>
+                        <option value="3">⭐⭐⭐ 3 Estrelas</option><option value="4">⭐⭐⭐⭐ 4 Estrelas</option>
+                        <option value="5">⭐⭐⭐⭐⭐ 5 Estrelas</option><option value="6">⭐⭐⭐⭐⭐⭐ 6 Estrelas</option>
+                        <option value="7">⭐⭐⭐⭐⭐⭐⭐ 7 Estrelas</option><option value="8">⭐⭐⭐⭐⭐⭐⭐⭐ 8 Estrelas</option>
+                        <option value="9">⭐⭐⭐⭐⭐⭐⭐⭐⭐ 9 Estrelas</option><option value="10">⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐ 10 Estrelas</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editTipoJogador">Tipo de Jogador:</label>
+                    <select id="editTipoJogador">
+                        <option value="mensalista">Mensalista</option>
+                        <option value="avulso">Avulso</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn" id="btnSalvar" onclick="salvarEdicao()">💾 Salvar</button>
+                    <button class="btn btn-danger" id="btnRemover" onclick="removerJogador()">🗑️ Remover</button>
+                </div>
+                <button class="btn btn-full" onclick="fecharModal()" style="margin-top: 10px; background: #666;">❌ Cancelar</button>
+            </div>
+        </div>
+
+        <div id="restricoesModal" class="edit-modal">
+            <div class="edit-modal-content restrictions-modal-content">
+                <h3>🚫 Configurar Restrições entre Jogadores</h3>
+                <p style="text-align: center; margin-bottom: 15px; color: #666; font-size: 14px;">Selecione jogadores que não podem ficar no mesmo time:</p>
+                <div class="form-group">
+                    <label>Selecionar Jogadores para Restringir:</label>
+                    <div class="player-selector" id="playerSelector"></div>
+                    <button class="btn" onclick="criarRestricao()" id="btnCriarRestricao" style="margin-top: 10px;" disabled>➕ Criar Restrição</button>
+                </div>
+                <div class="form-group">
+                    <label>Restrições Ativas:</label>
+                    <div id="listaRestricoes"></div>
+                </div>
+                <button class="btn btn-full" onclick="fecharModalRestricoes()" style="margin-top: 20px; background: #666;">✅ Concluir</button>
+            </div>
+        </div>
+
+        <div id="confirmDeleteModal" class="edit-modal">
+            <div class="edit-modal-content" style="max-width: 350px;">
+                <h3>⚠️ Confirmar Exclusão</h3>
+                <p style="text-align: center; margin: 20px 0; color: #666; font-size: 15px;" id="deleteMessage"></p>
+                <div class="modal-actions">
+                    <button class="btn btn-danger" onclick="confirmarExclusao()">🗑️ Excluir</button>
+                    <button class="btn" onclick="cancelarExclusao()" style="background: #666;">❌ Cancelar</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="historicoViewModal" class="edit-modal">
+            <div class="edit-modal-content" style="max-height: 90vh;">
+                <h3 id="historicoViewTitle">📜 Times do Dia</h3>
+                <div id="historicoViewContent" style="max-height: 60vh; overflow-y: auto; -webkit-overflow-scrolling: touch;"></div>
+                <button class="btn btn-full" onclick="fecharHistoricoView()" style="margin-top: 15px; background: #666;">✅ Fechar</button>
+            </div>
+        </div>
+
+    </div><!-- /container -->
+
+    <!-- JS — ordem importa -->
+    <script src="js/state.js"></script>
+    <script src="js/firebase.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/players.js"></script>
+    <script src="js/teams.js"></script>
+    <script src="js/finance.js"></script>
+    <script src="js/history.js"></script>
+    <script src="js/restrictions.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/app.js"></script>
+
+</body>
+</html>
