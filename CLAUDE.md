@@ -120,9 +120,9 @@ futebol-estrelas-default-rtdb/
 - [x] Histórico de times com visualização detalhada
 - [x] Modo offline com localStorage
 - [x] Indicador de sync Firebase
+- [x] PWA — manifest.json + service worker para instalar no celular
 
 ## Funcionalidades pendentes (próximas a implementar)
-- [ ] PWA — manifest.json + service worker para instalar no celular
 - [ ] Compartilhamento via WhatsApp dos times formados
 - [ ] Firebase Authentication — admin vs jogador comum
 - [ ] Notificações push quando times forem separados
