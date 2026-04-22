@@ -305,3 +305,40 @@ function exibirTimes(times, genericosAdicionados = 0) {
     balanceInfo.style.display = 'block';
     balanceInfo.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
+
+// ---------- Swap manual ----------
+
+function atualizarBotaoConfirmar() {
+    const btn = document.getElementById('btnConfirmarTimes');
+    if (btn) btn.disabled = swapModoAtivo;
+}
+
+window.cancelarSwap = function() {
+    swapJogadorSelecionado = null;
+    swapModoAtivo = false;
+    renderizarTimes(timesFormados, genericosAdicionados);
+    atualizarBotaoConfirmar();
+};
+
+window.handleSwapTap = function(timeIdx, jogadorIdx) {
+    const sel = swapJogadorSelecionado;
+
+    if (sel === null) {
+        swapJogadorSelecionado = { timeIdx, jogadorIdx };
+        swapModoAtivo = true;
+    } else if (timeIdx === sel.timeIdx && jogadorIdx === sel.jogadorIdx) {
+        swapJogadorSelecionado = null;
+        swapModoAtivo = false;
+    } else if (timeIdx === sel.timeIdx) {
+        swapJogadorSelecionado = { timeIdx, jogadorIdx };
+    } else {
+        const tmp = timesFormados[sel.timeIdx][sel.jogadorIdx];
+        timesFormados[sel.timeIdx][sel.jogadorIdx] = timesFormados[timeIdx][jogadorIdx];
+        timesFormados[timeIdx][jogadorIdx] = tmp;
+        swapJogadorSelecionado = null;
+        swapModoAtivo = false;
+    }
+
+    renderizarTimes(timesFormados, genericosAdicionados);
+    // atualizarBotaoConfirmar() já é chamado dentro de renderizarTimes
+};
