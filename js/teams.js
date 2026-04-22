@@ -4,6 +4,40 @@
 
 const NOMES_EQUIPES = ['🔵 Time A', '🔴 Time B', '🟢 Time C', '🟡 Time D'];
 
+const MAX_TENTATIVAS_BALANCEAMENTO = 30;
+
+function encontrarMelhorDistribuicao(todos, numTimes) {
+    let melhor = null;
+    let menorDiff = Infinity;
+
+    for (let i = 0; i < MAX_TENTATIVAS_BALANCEAMENTO; i++) {
+        const resultado = distribuirComRestricoes(todos, numTimes);
+        if (!resultado.sucesso) continue;
+
+        const medias = resultado.times.map(t =>
+            t.reduce((s, j) => s + j.estrelas, 0) / t.length
+        );
+        const diff = Math.max(...medias) - Math.min(...medias);
+
+        if (diff < menorDiff) {
+            menorDiff = diff;
+            melhor = resultado;
+        }
+
+        if (diff === 0) break;
+    }
+
+    return melhor ?? {
+        sucesso: false,
+        mensagem: 'Não foi possível criar uma distribuição que respeite todas as restrições. Considere revisá-las.'
+    };
+}
+
+function renderizarTimes(times, _genericosAdicionados) {
+    console.log('[renderizarTimes stub] times:', times.length, 'times,',
+        times.map(t => (t.reduce((s,j)=>s+j.estrelas,0)/t.length).toFixed(2)).join(' / '), 'médias');
+}
+
 // ---------- Entrada principal ----------
 
 window.separarTimes = function() {
@@ -28,11 +62,13 @@ window.separarTimes = function() {
         todos.push({ id: `generico_${i}`, nome: `Jogador Extra ${i + 1}`, estrelas: 5, tipo: 'mensalista', isGenerico: true });
     }
 
-    const resultado = distribuirComRestricoes(todos, numTimes);
+    const resultado = encontrarMelhorDistribuicao(todos, numTimes);
     if (!resultado.sucesso) { alert(resultado.mensagem); return; }
 
-    ultimaDistribuicao = { times: resultado.times, genericosNecessarios: genericos };
-    mostrarModalAprovacao(resultado.times);
+    timesFormados = resultado.times;
+    genericosAdicionados = genericos;
+    renderizarTimes(timesFormados, genericosAdicionados);
+    document.getElementById('confirmarTimesContainer').style.display = 'block';
 };
 
 // ---------- Algoritmo com restrições ----------
