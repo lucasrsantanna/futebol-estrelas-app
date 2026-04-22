@@ -342,3 +342,51 @@ window.handleSwapTap = function(timeIdx, jogadorIdx) {
     renderizarTimes(timesFormados, genericosAdicionados);
     // atualizarBotaoConfirmar() já é chamado dentro de renderizarTimes
 };
+
+// ---------- Confirmar / Redistribuir ----------
+
+window.confirmarTimes = function() {
+    if (!timesFormados || confirmacaoEmAndamento) return;
+
+    // Guard contra double-tap: flag dedicada porque mostrarModalFinanceiro() (finance.js linha 9)
+    // restaura timesFormados = ultimaDistribuicao.times, tornando o guard timesFormados===null ineficaz.
+    confirmacaoEmAndamento = true;
+    const timesParaSalvar = timesFormados;
+    const genericosParaSalvar = genericosAdicionados;
+
+    // Compatibilidade com mostrarModalFinanceiro() que lê ultimaDistribuicao
+    ultimaDistribuicao = { times: timesParaSalvar, genericosNecessarios: genericosParaSalvar };
+
+    salvarHistoricoTimes({
+        id: Date.now().toString(),
+        data: new Date().toISOString(),
+        times: timesParaSalvar.map(time =>
+            time.map(j => ({ id: j.id, nome: j.nome, estrelas: j.estrelas, tipo: j.tipo, isGenerico: j.isGenerico || false }))
+        ),
+        totalJogadores: jogadoresPresentes.length,
+        genericosAdicionados: genericosParaSalvar
+    });
+
+    document.getElementById('confirmarTimesContainer').style.display = 'none';
+    swapJogadorSelecionado = null;
+    swapModoAtivo = false;
+    confirmacaoEmAndamento = false;
+
+    mostrarModalFinanceiro();
+};
+
+window.redistribuirTimes = function() {
+    const tc = document.getElementById('teamsContainer');
+    tc.innerHTML = '';
+    tc.style.display = 'none';
+    document.getElementById('balanceInfo').style.display = 'none';
+    document.getElementById('confirmarTimesContainer').style.display = 'none';
+
+    timesFormados = null;
+    genericosAdicionados = 0;
+    swapJogadorSelecionado = null;
+    swapModoAtivo = false;
+    confirmacaoEmAndamento = false;
+
+    separarTimes();
+};
