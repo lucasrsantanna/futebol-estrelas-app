@@ -33,9 +33,75 @@ function encontrarMelhorDistribuicao(todos, numTimes) {
     };
 }
 
-function renderizarTimes(times, _genericosAdicionados) {
-    console.log('[renderizarTimes stub] times:', times.length, 'times,',
-        times.map(t => (t.reduce((s,j)=>s+j.estrelas,0)/t.length).toFixed(2)).join(' / '), 'médias');
+function renderizarTimes(times, genericosAdicionados = 0) {
+    const container = document.getElementById('teamsContainer');
+    const n = times.length;
+    container.className = `teams-container ${n === 2 ? 'two-teams' : n === 3 ? 'three-teams' : 'four-teams'}`;
+    container.style.display = 'grid';
+
+    const stats = times.map(t => ({
+        total:       t.reduce((s, j) => s + j.estrelas, 0),
+        media:       parseFloat(t.length ? (t.reduce((s, j) => s + j.estrelas, 0) / t.length).toFixed(1) : 0),
+        jogadores:   t.length,
+        mensalistas: t.filter(j => !j.isGenerico && (j.tipo || 'mensalista') === 'mensalista').length,
+        avulsos:     t.filter(j => !j.isGenerico && j.tipo === 'avulso').length,
+        genericos:   t.filter(j => j.isGenerico).length
+    }));
+
+    const banner = swapModoAtivo
+        ? `<div class="swap-banner">
+               <span>🔄 Selecione um jogador do outro time para trocar</span>
+               <button onclick="cancelarSwap()" style="background:none;border:none;font-size:18px;cursor:pointer;color:#6a1b9a;">✕</button>
+           </div>`
+        : '';
+
+    container.innerHTML = banner + times.map((time, timeIdx) =>
+        `<div class="team team-${timeIdx}">
+            <h3>${NOMES_EQUIPES[timeIdx]}</h3>
+            <div class="team-stats">
+                <strong>Total: ${stats[timeIdx].total} ⭐</strong><br>
+                <strong>Média: ${stats[timeIdx].media}</strong><br>
+                <strong>Jogadores: ${stats[timeIdx].jogadores}</strong><br>
+                <strong>Mensalistas: ${stats[timeIdx].mensalistas} | Avulsos: ${stats[timeIdx].avulsos}</strong>
+                ${stats[timeIdx].genericos > 0 ? `<br><strong>Genéricos: ${stats[timeIdx].genericos}</strong>` : ''}
+            </div>
+            ${time.map((j, jogadorIdx) => {
+                const selecionado = swapJogadorSelecionado &&
+                    swapJogadorSelecionado.timeIdx === timeIdx &&
+                    swapJogadorSelecionado.jogadorIdx === jogadorIdx;
+                return `<div class="team-player${selecionado ? ' swap-selected' : ''}"
+                             style="${j.isGenerico ? 'opacity:.7;font-style:italic;' : ''}"
+                             data-time-idx="${timeIdx}"
+                             data-jogador-idx="${jogadorIdx}"
+                             onclick="handleSwapTap(${timeIdx}, ${jogadorIdx})">
+                    <div class="team-player-name">${j.isGenerico ? j.nome + ' 👤' : formatarNomeComTipo(j)}</div>
+                    <div class="team-player-stars">${criarEstrelas(j.estrelas)}</div>
+                </div>`;
+            }).join('')}
+        </div>`
+    ).join('');
+
+    const medias = stats.map(s => s.media);
+    const diff   = Math.max(...medias) - Math.min(...medias);
+    const qualidade = diff <= 0.5 ? 'Excelente' : diff <= 1.0 ? 'Muito Bom' : diff <= 1.5 ? 'Bom' : diff <= 2.0 ? 'Regular' : 'Pode melhorar';
+    const emoji  = diff <= 1.0 ? '🟢' : diff <= 2.0 ? '🟡' : '🔴';
+
+    const balanceInfo = document.getElementById('balanceInfo');
+    balanceInfo.innerHTML = `
+        <h3>📊 Análise da Distribuição</h3>
+        <p><strong>Times formados:</strong> ${n} times</p>
+        ${genericosAdicionados > 0 ? `<p><strong>Genéricos adicionados:</strong> ${genericosAdicionados}</p>` : ''}
+        <p><strong>Média geral:</strong> ${(medias.reduce((s, m) => s + m, 0) / medias.length).toFixed(1)} estrelas</p>
+        <p><strong>Maior diferença:</strong> ${diff.toFixed(1)} estrelas</p>
+        <p><strong>Qualidade:</strong> ${qualidade}</p>
+        <p style="font-size:13px;margin-top:10px;color:#666;">${emoji} ${qualidade === 'Excelente' || qualidade === 'Muito Bom' ? 'Times muito bem balanceados!' : qualidade === 'Bom' ? 'Times bem balanceados' : 'Considere redistribuir alguns jogadores'}</p>
+        ${Object.keys(restricoes).length > 0 ? '<p style="font-size:12px;margin-top:10px;color:#9c27b0;">🚫 Restrições entre jogadores foram respeitadas</p>' : ''}
+        ${genericosAdicionados > 0 ? `<p style="font-size:12px;margin-top:15px;padding:10px;background:#fff3cd;border-radius:8px;color:#856404;"><strong>💡 Dica:</strong> Os jogadores genéricos podem ser substituídos por qualquer pessoa disponível no dia.</p>` : ''}
+    `;
+    balanceInfo.style.display = 'block';
+    balanceInfo.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    atualizarBotaoConfirmar();
 }
 
 // ---------- Entrada principal ----------
