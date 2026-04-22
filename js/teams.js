@@ -370,9 +370,8 @@ window.confirmarTimes = function() {
     document.getElementById('confirmarTimesContainer').style.display = 'none';
     swapJogadorSelecionado = null;
     swapModoAtivo = false;
-    confirmacaoEmAndamento = false;
-
     mostrarModalFinanceiro();
+    confirmacaoEmAndamento = false;
 };
 
 window.redistribuirTimes = function() {
