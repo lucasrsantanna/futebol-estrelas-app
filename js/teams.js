@@ -314,10 +314,10 @@ function atualizarBotaoConfirmar() {
 }
 
 window.cancelarSwap = function() {
+    if (!timesFormados) return;
     swapJogadorSelecionado = null;
     swapModoAtivo = false;
     renderizarTimes(timesFormados, genericosAdicionados);
-    atualizarBotaoConfirmar();
 };
 
 window.handleSwapTap = function(timeIdx, jogadorIdx) {
