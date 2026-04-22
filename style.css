@@ -152,7 +152,7 @@ input:focus, select:focus { outline: none; border-color: #4CAF50; box-shadow: 0 
 .team-1 { border-color: #FF5722; } .team-1 h3 { color: #FF5722; } .team-1 .team-player { border-left-color: #FF5722; }
 .team-2 { border-color: #4CAF50; } .team-2 h3 { color: #4CAF50; } .team-2 .team-player { border-left-color: #4CAF50; }
 .team-3 { border-color: #FF9800; } .team-3 h3 { color: #FF9800; } .team-3 .team-player { border-left-color: #FF9800; }
-.team-player.swap-selected { border: 2px solid #9C27B0; background: rgba(156, 39, 176, 0.08); border-radius: 8px; }
+.team-player.swap-selected { outline: 2px solid #9C27B0; background: rgba(156, 39, 176, 0.08); }
 .swap-banner { background: #f3e5f5; border: 1px solid #9C27B0; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: #6a1b9a; }
 
 /* Balance info */
