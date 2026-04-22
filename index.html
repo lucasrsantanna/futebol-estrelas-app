@@ -110,6 +110,15 @@
                 <div class="balance-info" id="balanceInfo" style="display: none;"></div>
                 <div class="teams-container" id="teamsContainer" style="display: none;"></div>
 
+                <div id="confirmarTimesContainer" style="display:none; margin-top:20px;">
+                    <button class="btn btn-full" id="btnConfirmarTimes" onclick="confirmarTimes()">
+                        ✅ Confirmar Times
+                    </button>
+                    <button class="btn btn-full" onclick="redistribuirTimes()" style="background:#666; margin-top:8px;">
+                        🔄 Redistribuir
+                    </button>
+                </div>
+
                 <button class="fab-button" onclick="abrirCadastroRapido()" title="Adicionar jogador rapidamente">➕</button>
             </div>
 
@@ -225,25 +234,6 @@
         </div><!-- /main-content -->
 
         <!-- MODAIS -->
-
-        <div id="aprovacaoModal" class="edit-modal">
-            <div class="edit-modal-content">
-                <div class="aprovacao-header">
-                    <h3>⚽ Confirmar Distribuição</h3>
-                    <p>Verifique se os times estão equilibrados</p>
-                </div>
-                <div class="aprovacao-body">
-                    <div class="teams-preview" id="teamsPreview"></div>
-                </div>
-                <div class="aprovacao-footer">
-                    <div class="aprovacao-actions-row">
-                        <button class="btn" onclick="confirmarDistribuicao()">✅ Confirmar</button>
-                        <button class="btn btn-danger" onclick="refazerDistribuicao()">🔄 Refazer</button>
-                    </div>
-                    <button class="btn btn-full" onclick="cancelarAprovacao()" style="background: #666;">❌ Cancelar</button>
-                </div>
-            </div>
-        </div>
 
         <div id="sessaoModal" class="edit-modal">
             <div class="edit-modal-content">

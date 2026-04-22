@@ -18,3 +18,8 @@ let selectedPlayersForRestriction = [];
 let sessaoParaExcluir            = null;
 let historicoParaExcluir         = null;
 let isOnline                     = navigator.onLine;
+
+let swapJogadorSelecionado = null;
+let swapModoAtivo = false;
+let genericosAdicionados = 0;
+let confirmacaoEmAndamento = false;

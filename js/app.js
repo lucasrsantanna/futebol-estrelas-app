@@ -30,7 +30,6 @@ document.addEventListener('DOMContentLoaded', function() {
 document.addEventListener('click', function(e) {
     const modais = [
         { id: 'editModal',          fn: fecharModal              },
-        { id: 'aprovacaoModal',     fn: cancelarAprovacao        },
         { id: 'sessaoModal',        fn: fecharSessaoModal        },
         { id: 'restricoesModal',    fn: fecharModalRestricoes    },
         { id: 'confirmDeleteModal', fn: cancelarExclusao         },
@@ -38,7 +37,8 @@ document.addEventListener('click', function(e) {
         { id: 'historicoViewModal', fn: fecharHistoricoView      },
     ];
     modais.forEach(({ id, fn }) => {
-        if (e.target === document.getElementById(id)) fn();
+        const el = document.getElementById(id);
+        if (el && e.target === el) fn();
     });
 });
 
@@ -52,13 +52,15 @@ document.addEventListener('keydown', function(e) {
     fecharModalRestricoes();
     fecharCadastroRapido();
     fecharHistoricoView();
-    document.getElementById('aprovacaoModal').style.display     = 'none';
     document.getElementById('confirmDeleteModal').style.display = 'none';
-    ultimaDistribuicao           = null;
-    timesFormados                = null;
+    ultimaDistribuicao            = null;
+    timesFormados                 = null;
+    swapJogadorSelecionado        = null;
+    swapModoAtivo                 = false;
+    confirmacaoEmAndamento        = false;
     selectedPlayersForRestriction = [];
-    sessaoParaExcluir            = null;
-    historicoParaExcluir         = null;
+    sessaoParaExcluir             = null;
+    historicoParaExcluir          = null;
 });
 
 // ---------- Online / Offline ----------
