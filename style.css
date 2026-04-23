@@ -96,6 +96,7 @@ input:focus, select:focus { outline: none; border-color: #4CAF50; box-shadow: 0 
 .quick-action-btn.mensalistas { background: #e8f5e9; color: #2e7d32; }
 .quick-action-btn.avulsos { background: #fff3e0; color: #e65100; }
 .quick-action-btn.limpar { background: #ffebee; color: #c62828; }
+.quick-action-btn.importar { background: #e3f2fd; color: #1565c0; }
 
 /* No results */
 .no-results { text-align: center; padding: 40px 20px; color: #666; font-size: 15px; }
@@ -322,6 +323,33 @@ input:focus, select:focus { outline: none; border-color: #4CAF50; box-shadow: 0 
     .selected-counter { height: 32px; font-size: 11px; }
     .quick-actions { display: none; }
 }
+
+/* Import Modal */
+#importTextarea { width: 100%; min-height: 150px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; resize: vertical; box-sizing: border-box; font-family: inherit; }
+.import-btn-voltar { background: none; border: none; color: #4CAF50; font-size: 14px; cursor: pointer; padding: 4px 0 12px; display: inline-block; }
+.import-accordion-section { border: 1px solid #e0e0e0; border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+.import-accordion-header { padding: 13px 16px; font-weight: 600; font-size: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; user-select: none; }
+.import-accordion-arrow { font-size: 12px; transition: transform 0.2s; display: inline-block; }
+.import-accordion-section.open .import-accordion-arrow { transform: rotate(90deg); }
+.import-accordion-body { display: none; padding: 12px 14px; }
+.import-accordion-section.open .import-accordion-body { display: block; }
+.import-match-option { padding: 12px 14px; border: 2px solid #e0e0e0; border-radius: 8px; margin-bottom: 8px; cursor: pointer; font-size: 14px; transition: border-color 0.15s, background 0.15s; min-height: 44px; display: flex; align-items: center; }
+.import-match-option.selected { border-color: #FF9800; background: #FFF3E0; }
+.import-confirmado-item { cursor: default; gap: 8px; }
+.import-confirmado-item input[type=checkbox] { width: auto; min-height: 0; flex-shrink: 0; }
+.import-match-label { color: #888; font-size: 13px; margin-left: auto; padding-left: 8px; }
+.import-ambiguo-group { margin-bottom: 18px; }
+.import-ambiguo-label { font-weight: 600; font-size: 14px; margin-bottom: 8px; }
+.import-novo-inline { background: #f8f9fa; border-radius: 8px; padding: 10px 12px; margin-top: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.import-new-player { display: flex; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid #f0f0f0; flex-wrap: wrap; }
+.import-ignorado { opacity: 0.5; text-decoration: line-through; }
+.import-nome-input { flex: 1; min-width: 90px; height: 38px; padding: 6px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; font-family: inherit; }
+.import-tipo-toggle { min-width: 36px; height: 36px; border: 1px solid #ccc; border-radius: 6px; background: #f0f0f0; font-size: 13px; font-weight: 700; cursor: pointer; }
+.import-stars-control { display: inline-flex; align-items: center; gap: 4px; }
+.import-stars-control button { width: 32px; height: 32px; border: 1px solid #ccc; border-radius: 6px; background: #f5f5f5; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; }
+.import-stars-control > span { min-width: 18px; text-align: center; font-weight: 700; font-size: 15px; }
+.import-ignorar-btn { padding: 6px 10px; border: none; background: #f44336; color: white; border-radius: 6px; font-size: 12px; cursor: pointer; white-space: nowrap; }
+.import-desfazer-btn { background: #4CAF50; }
 
 @media (pointer: coarse) {
     .btn, .list-item, .edit-btn, .menu-item { min-height: 48px; }

@@ -35,6 +35,7 @@ document.addEventListener('click', function(e) {
         { id: 'confirmDeleteModal', fn: cancelarExclusao         },
         { id: 'quickAddModal',      fn: fecharCadastroRapido     },
         { id: 'historicoViewModal', fn: fecharHistoricoView      },
+        { id: 'importModal',        fn: fecharImportModal        },
     ];
     modais.forEach(({ id, fn }) => {
         const el = document.getElementById(id);
@@ -52,6 +53,7 @@ document.addEventListener('keydown', function(e) {
     fecharModalRestricoes();
     fecharCadastroRapido();
     fecharHistoricoView();
+    fecharImportModal();
     document.getElementById('confirmDeleteModal').style.display = 'none';
     ultimaDistribuicao            = null;
     timesFormados                 = null;

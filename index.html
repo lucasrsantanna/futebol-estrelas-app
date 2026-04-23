@@ -96,7 +96,7 @@
                     </div>
                     <div class="quick-actions">
                         <button class="quick-action-btn mensalistas" onclick="marcarTodosMensalistas()">✓ Mensalistas</button>
-                        <button class="quick-action-btn avulsos" onclick="marcarTodosAvulsos()">✓ Avulsos</button>
+                        <button class="quick-action-btn importar" onclick="abrirImportModal()">📋 Importar</button>
                         <button class="quick-action-btn limpar" onclick="limparTodosCheckbox()">✕ Limpar</button>
                     </div>
                 </div>
@@ -235,6 +235,31 @@
 
         <!-- MODAIS -->
 
+        <!-- MODAL IMPORTAR LISTA WHATSAPP -->
+        <div id="importModal" class="edit-modal">
+            <div class="edit-modal-content">
+                <h3>📋 Importar Lista do WhatsApp</h3>
+
+                <div id="importStep1">
+                    <p style="color: #666; font-size: 14px; margin-bottom: 10px;">Cole abaixo o texto da lista enviada no WhatsApp:</p>
+                    <textarea id="importTextarea" placeholder="Cole aqui a lista..."></textarea>
+                    <p id="importError" style="display: none; color: #c62828; font-size: 13px; margin: 8px 0;"></p>
+                    <div class="modal-actions">
+                        <button class="btn" onclick="processarListaWhatsApp()">Processar →</button>
+                        <button class="btn" onclick="fecharImportModal()" style="background: #666;">Cancelar</button>
+                    </div>
+                </div>
+
+                <div id="importStep2" style="display: none;">
+                    <button class="import-btn-voltar" onclick="window._importVoltarStep1()">← Voltar</button>
+                    <div id="importRevisaoContent"></div>
+                    <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #eee;">
+                        <button class="btn btn-full" id="btnConfirmarImport" onclick="confirmarImportacao()">✅ Confirmar como presentes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div id="sessaoModal" class="edit-modal">
             <div class="edit-modal-content">
                 <h3>💰 Registrar Sessão de Jogo</h3>
@@ -333,6 +358,7 @@
     <script src="js/firebase.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/players.js"></script>
+    <script src="js/import.js"></script>
     <script src="js/teams.js"></script>
     <script src="js/finance.js"></script>
     <script src="js/history.js"></script>
