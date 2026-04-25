@@ -3,101 +3,73 @@
 // ==============================================
 
 const firebaseConfig = {
-    apiKey: "AIzaSyAHTD1vEIh8ehAFR2M4APiE8Ky9HEAuPU",
-    authDomain: "futebol-estrelas.firebaseapp.com",
-    databaseURL: "https://futebol-estrelas-default-rtdb.firebaseio.com",
-    projectId: "futebol-estrelas",
-    storageBucket: "futebol-estrelas.firebasestorage.app",
-    messagingSenderId: "96538381574",
-    appId: "1:96538381574:web:dee50b846e46a898aeaecf",
-    measurementId: "G-B16XPZN9R8"
+    apiKey: "AIzaSyCK57enPKXxEoSMEkAyDS0eGl9sJ-va1kI",
+    authDomain: "futebol-estrelas-homolog.firebaseapp.com",
+    databaseURL: "https://futebol-estrelas-homolog-default-rtdb.firebaseio.com",
+    projectId: "futebol-estrelas-homolog",
+    storageBucket: "futebol-estrelas-homolog.firebasestorage.app",
+    messagingSenderId: "129208784668",
+    appId: "1:129208784668:web:6b1bd036ef678119418cd9"
 };
 
-// ---------- Inicialização ----------
+// ---------- Setup inicial (sem listeners) ----------
 
-function initFirebase() {
-    carregarSelecaoSalva();
-
+function setupFirebaseApp() {
     try {
-        app = firebase.initializeApp(firebaseConfig);
+        app      = firebase.initializeApp(firebaseConfig);
         database = firebase.database();
-
-        database.ref('jogadores').on('value', (snapshot) => {
-            jogadores = snapshot.val() || {};
-            updateUI();
-            updateSyncStatus('synced');
-        });
-
-        database.ref('sessoes').on('value', (snapshot) => {
-            sessoes = snapshot.val() || {};
-            updateFinanceiroUI();
-        });
-
-        database.ref('restricoes').on('value', (snapshot) => {
-            restricoes = snapshot.val() || {};
-        });
-
-        database.ref('historicoTimes').on('value', (snapshot) => {
-            historicoTimes = snapshot.val() || {};
-            const currentSection = document.querySelector('.content-section.active')?.id;
-            if (currentSection === 'historico') exibirHistorico();
-        });
-
-        database.ref('.info/connected').on('value', (snapshot) => {
-            isOnline = snapshot.val() === true;
-            updateSyncStatus(isOnline ? 'synced' : 'offline');
-        });
-
-        hideLoading();
+        auth     = firebase.auth();
     } catch (error) {
-        console.error('Erro ao conectar com Firebase:', error);
-        showFirebaseError();
+        console.error('Erro ao inicializar Firebase:', error);
     }
 }
 
-function showFirebaseError() {
-    document.getElementById('loadingScreen').innerHTML = `
-        <div style="text-align: center; padding: 40px 20px;">
-            <div style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
-            <h2>Configuração Necessária</h2>
-            <p style="margin: 20px 0; line-height: 1.6;">
-                Para usar o modo compartilhado, é necessário configurar o Firebase.<br><br>
-                <strong>Como configurar:</strong><br>
-                1. Acesse <a href="https://console.firebase.google.com" target="_blank" style="color: #4CAF50;">Firebase Console</a><br>
-                2. Crie um novo projeto<br>
-                3. Configure o Realtime Database<br>
-                4. Substitua as configurações no código
-            </p>
-            <button onclick="useLocalMode()" style="background: #4CAF50; color: white; padding: 15px 30px; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; margin-top: 20px;">
-                📱 Usar Modo Local (sem compartilhamento)
-            </button>
-        </div>
-    `;
-}
+// ---------- Listeners do grupo ativo ----------
 
-window.useLocalMode = function() {
-    jogadores      = JSON.parse(localStorage.getItem('jogadoresFutebol')   || '{}');
-    sessoes        = JSON.parse(localStorage.getItem('sessoesFutebol')      || '{}');
-    restricoes     = JSON.parse(localStorage.getItem('restricoesFutebol')   || '{}');
-    historicoTimes = JSON.parse(localStorage.getItem('historicoTimesFutebol') || '{}');
+function inicializarListeners(grupoId) {
     carregarSelecaoSalva();
-    hideLoading();
-    updateSyncStatus('offline');
 
-    const banner = document.querySelector('.info-banner');
-    if (banner) {
-        banner.innerHTML = `<h4>📱 Modo Local</h4><p>Dados salvos apenas neste dispositivo. Configure o Firebase para compartilhar!</p>`;
-        banner.style.background = 'linear-gradient(135deg, #fff3e0, #ffe0b2)';
-        banner.style.borderColor = '#FF9800';
-    }
-};
+    database.ref(`grupos/${grupoId}/jogadores`).on('value', (snapshot) => {
+        jogadores = snapshot.val() || {};
+        updateUI();
+        updateSyncStatus('synced');
+    });
+
+    database.ref(`grupos/${grupoId}/sessoes`).on('value', (snapshot) => {
+        sessoes = snapshot.val() || {};
+        updateFinanceiroUI();
+    });
+
+    database.ref(`grupos/${grupoId}/restricoes`).on('value', (snapshot) => {
+        restricoes = snapshot.val() || {};
+    });
+
+    database.ref(`grupos/${grupoId}/historicoTimes`).on('value', (snapshot) => {
+        historicoTimes = snapshot.val() || {};
+        const currentSection = document.querySelector('.content-section.active')?.id;
+        if (currentSection === 'historico') exibirHistorico();
+    });
+
+    database.ref('.info/connected').on('value', (snapshot) => {
+        isOnline = snapshot.val() === true;
+        updateSyncStatus(isOnline ? 'synced' : 'offline');
+    });
+}
+
+function desligarListeners(grupoId) {
+    if (!database || !grupoId) return;
+    database.ref(`grupos/${grupoId}/jogadores`).off();
+    database.ref(`grupos/${grupoId}/sessoes`).off();
+    database.ref(`grupos/${grupoId}/restricoes`).off();
+    database.ref(`grupos/${grupoId}/historicoTimes`).off();
+}
 
 // ---------- Jogadores ----------
 
 function salvarJogador(jogador) {
-    if (database) {
+    if (database && grupoAtualId) {
         updateSyncStatus('syncing');
-        database.ref('jogadores/' + jogador.id).set(jogador);
+        database.ref(`grupos/${grupoAtualId}/jogadores/${jogador.id}`).set(jogador);
     } else {
         const local = JSON.parse(localStorage.getItem('jogadoresFutebol') || '{}');
         local[jogador.id] = jogador;
@@ -108,9 +80,9 @@ function salvarJogador(jogador) {
 }
 
 function removerJogadorDB(id) {
-    if (database) {
+    if (database && grupoAtualId) {
         updateSyncStatus('syncing');
-        database.ref('jogadores/' + id).remove();
+        database.ref(`grupos/${grupoAtualId}/jogadores/${id}`).remove();
     } else {
         const local = JSON.parse(localStorage.getItem('jogadoresFutebol') || '{}');
         delete local[id];
@@ -123,9 +95,9 @@ function removerJogadorDB(id) {
 // ---------- Sessões ----------
 
 function salvarSessaoDB(sessao) {
-    if (database) {
+    if (database && grupoAtualId) {
         updateSyncStatus('syncing');
-        database.ref('sessoes/' + sessao.id).set(sessao);
+        database.ref(`grupos/${grupoAtualId}/sessoes/${sessao.id}`).set(sessao);
     } else {
         const local = JSON.parse(localStorage.getItem('sessoesFutebol') || '{}');
         local[sessao.id] = sessao;
@@ -136,9 +108,9 @@ function salvarSessaoDB(sessao) {
 }
 
 function excluirSessaoDB(id) {
-    if (database) {
+    if (database && grupoAtualId) {
         updateSyncStatus('syncing');
-        database.ref('sessoes/' + id).remove();
+        database.ref(`grupos/${grupoAtualId}/sessoes/${id}`).remove();
     } else {
         const local = JSON.parse(localStorage.getItem('sessoesFutebol') || '{}');
         delete local[id];
@@ -151,9 +123,9 @@ function excluirSessaoDB(id) {
 // ---------- Restrições ----------
 
 function salvarRestricaoDB(restricao) {
-    if (database) {
+    if (database && grupoAtualId) {
         updateSyncStatus('syncing');
-        database.ref('restricoes/' + restricao.id).set(restricao);
+        database.ref(`grupos/${grupoAtualId}/restricoes/${restricao.id}`).set(restricao);
     } else {
         const local = JSON.parse(localStorage.getItem('restricoesFutebol') || '{}');
         local[restricao.id] = restricao;
@@ -163,9 +135,9 @@ function salvarRestricaoDB(restricao) {
 }
 
 function removerRestricaoDB(id) {
-    if (database) {
+    if (database && grupoAtualId) {
         updateSyncStatus('syncing');
-        database.ref('restricoes/' + id).remove();
+        database.ref(`grupos/${grupoAtualId}/restricoes/${id}`).remove();
     } else {
         const local = JSON.parse(localStorage.getItem('restricoesFutebol') || '{}');
         delete local[id];
@@ -178,9 +150,9 @@ function removerRestricaoDB(id) {
 // ---------- Histórico ----------
 
 function salvarHistoricoTimes(registro) {
-    if (database) {
+    if (database && grupoAtualId) {
         updateSyncStatus('syncing');
-        database.ref('historicoTimes/' + registro.id).set(registro);
+        database.ref(`grupos/${grupoAtualId}/historicoTimes/${registro.id}`).set(registro);
     } else {
         const local = JSON.parse(localStorage.getItem('historicoTimesFutebol') || '{}');
         local[registro.id] = registro;
@@ -190,9 +162,9 @@ function salvarHistoricoTimes(registro) {
 }
 
 function excluirHistoricoTimesDB(id) {
-    if (database) {
+    if (database && grupoAtualId) {
         updateSyncStatus('syncing');
-        database.ref('historicoTimes/' + id).remove();
+        database.ref(`grupos/${grupoAtualId}/historicoTimes/${id}`).remove();
     } else {
         const local = JSON.parse(localStorage.getItem('historicoTimesFutebol') || '{}');
         delete local[id];
@@ -205,9 +177,9 @@ function excluirHistoricoTimesDB(id) {
 // ---------- Pagamentos ----------
 
 window.marcarPagamento = function(sessaoId, jogadorId, status) {
-    if (database) {
+    if (database && grupoAtualId) {
         updateSyncStatus('syncing');
-        database.ref(`sessoes/${sessaoId}/pagamentos/${jogadorId}`).set(status);
+        database.ref(`grupos/${grupoAtualId}/sessoes/${sessaoId}/pagamentos/${jogadorId}`).set(status);
     } else {
         const local = JSON.parse(localStorage.getItem('sessoesFutebol') || '{}');
         if (local[sessaoId]) {
