@@ -10,6 +10,7 @@ let jogadores         = {};
 let sessoes           = {};
 let restricoes        = {};
 let historicoTimes    = {};
+let jogadoresCarregados = false; // true após primeira resposta do Firebase (mesmo se vazio)
 
 // Sessão do usuário
 let usuarioAtual      = null;   // Firebase Auth User object

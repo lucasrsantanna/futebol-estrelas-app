@@ -32,7 +32,7 @@ window.processarListaWhatsApp = function() {
         return;
     }
 
-    if (Object.values(jogadores).length === 0) {
+    if (!jogadoresCarregados) {
         errEl.textContent = 'Aguarde o carregamento dos jogadores antes de importar.';
         errEl.style.display = 'block';
         return;

@@ -31,6 +31,7 @@ function inicializarListeners(grupoId) {
 
     database.ref(`grupos/${grupoId}/jogadores`).on('value', (snapshot) => {
         jogadores = snapshot.val() || {};
+        jogadoresCarregados = true;
         updateUI();
         updateSyncStatus('synced');
     });
