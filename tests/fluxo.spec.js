@@ -11,6 +11,7 @@ const TEST_PASSWORD = 'teste123456';
 async function fazerLogin(page) {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
+    await page.locator('#loadingScreen').waitFor({ state: 'hidden', timeout: 10000 });
     await page.locator('#telaLogin').waitFor({ state: 'visible' });
 
     await page.click('button[onclick="mostrarLoginEmail()"]');
