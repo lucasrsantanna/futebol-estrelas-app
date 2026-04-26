@@ -1,0 +1,14 @@
+{
+  "name": "gerenciador-de-times",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "diagnose": "playwright test tests/diagnose.spec.js --headed --reporter=line"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.59.1"
+  }
+}
