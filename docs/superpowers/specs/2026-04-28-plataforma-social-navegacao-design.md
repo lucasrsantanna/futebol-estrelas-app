@@ -183,7 +183,7 @@ Separado do nível técnico (que é por grupo). Mede comportamento e postura em 
 
 **Como funciona:**
 - Após cada pelada, participantes podem avaliar os outros jogadores da sessão
-- Avaliações são **anônimas** — o avaliado nunca sabe quem avaliou
+- Avaliações têm **anonimato opcional** — o avaliador escolhe se quer se identificar ou não
 - Cada avaliação tem: nota de 1–5 + tags descritivas (opcional)
 
 **Tags sugeridas:**
