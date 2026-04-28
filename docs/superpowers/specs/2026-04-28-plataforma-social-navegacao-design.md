@@ -163,17 +163,41 @@ Central de avisos com badge contador na aba.
 
 ### 6. Perfil
 
-Identidade do usuário na plataforma.
+Identidade do usuário na plataforma. Visível publicamente por qualquer usuário.
 
 **Conteúdo:**
 - Foto, nome e email
-- Nível médio agregado de estrelas (calculado entre todos os grupos)
 - Total de peladas jogadas na plataforma
-- Seção "Meus Grupos" — lista com papel e atalho para criar/entrar
+- Seção "Meus Grupos" — lista com papel e nível individual em cada grupo
+- **Reputação** (ver abaixo)
 - Histórico de peladas jogadas (últimas sessões)
 - Configurações: alterar nome/foto, logout, excluir conta
 
-**Nota:** o nível no Perfil é agregado. O nível dentro de cada grupo é definido pelo admin daquele grupo e pode ser diferente.
+**Nota:** não existe "nível médio" global de estrelas no perfil. O nível técnico é sempre relativo a cada grupo e definido pelo admin daquele grupo. No perfil público aparece apenas a reputação comportamental.
+
+---
+
+### 7. Sistema de Reputação
+
+Separado do nível técnico (que é por grupo). Mede comportamento e postura em campo.
+
+**Como funciona:**
+- Após cada pelada, participantes podem avaliar os outros jogadores da sessão
+- Avaliações são **anônimas** — o avaliado nunca sabe quem avaliou
+- Cada avaliação tem: nota de 1–5 + tags descritivas (opcional)
+
+**Tags sugeridas:**
+- Positivas: Gente fina, Fair play, Pontual, Comunicativo, Líder natural
+- Cautelares: Briga demais, Faltoso, Atrasado sempre
+
+**Exibição no perfil:**
+- Nota média: `4.8 😄 · 23 avaliações`
+- Tags mais citadas aparecem como pílulas embaixo da nota
+- Comentários livres curtos (anônimos) exibidos em lista
+
+**Visibilidade:**
+- Qualquer usuário autenticado pode ver o perfil e a reputação de outro
+- Só quem jogou na mesma pelada pode deixar avaliação
 
 ---
 
