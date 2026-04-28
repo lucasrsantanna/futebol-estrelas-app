@@ -80,8 +80,7 @@ Lista de todos os grupos que o usuário participa (como admin ou membro).
 **Conteúdo:**
 - Card por grupo: nome, papel (Admin / Membro), próxima sessão
 - Tap num grupo → abre dashboard do grupo
-- Botão "Criar grupo"
-- Botão "Entrar num grupo" (por link de convite ou busca)
+- Ações de criar/entrar em grupo disponíveis via botão + da tab bar
 
 ---
 
@@ -126,13 +125,17 @@ Acessado pelo ícone ⚙️ no header:
 
 ### 4. Botão + (Ação Principal)
 
-Contextual conforme situação do usuário:
+Abre um bottom sheet com opções. As duas primeiras são sempre fixas para qualquer usuário autenticado; as demais aparecem conforme contexto:
 
-| Contexto | Admin | Membro |
+| Opção | Quem vê | Quando aparece |
 |---|---|---|
-| Em Descobrir | "Buscar jogo hoje" (filtro dia=hoje) | "Buscar jogo hoje" |
-| No grupo ativo | "Publicar sessão" + "Postar aviso" | "Confirmar presença" |
-| Sem conta | Redireciona ao login | — |
+| **Criar grupo** | Qualquer usuário autenticado | Sempre |
+| **Solicitar participação em grupo** | Qualquer usuário autenticado | Sempre |
+| **Publicar sessão** | Admin | Contexto: dentro de um grupo ativo |
+| **Postar aviso** | Admin | Contexto: dentro de um grupo ativo |
+| **Confirmar presença** | Membro | Contexto: dentro de um grupo ativo |
+
+Sem conta: tap no "+" redireciona ao login.
 
 ---
 
