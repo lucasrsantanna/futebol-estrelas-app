@@ -54,14 +54,16 @@ Feed de peladas abertas. Tela inicial do app para qualquer usuário.
 - Nome do grupo + avatar
 - Localização (bairro/cidade) + distância aproximada
 - Próxima data e horário
-- Nível: `4 ⭐` (número + uma estrela)
+- Nível técnico: Família / Amador / Bom de bola / Craque / Elite
+- Estilo: Zoeira ou Competitivo
 - Vagas abertas (ex: "3 vagas")
 - Preço da diária (ex: R$ 15)
 - Botão "Solicitar vaga" / "Ver pelada"
 
 **Filtros (barra fixa no topo):**
 - Localização (automática ou manual)
-- Nível
+- Nível técnico (Família → Elite)
+- Estilo (Zoeira / Competitivo)
 - Dia da semana
 - Toggle "Apenas com vagas abertas"
 
