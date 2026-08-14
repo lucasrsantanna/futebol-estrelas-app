@@ -8,7 +8,8 @@ Transformar o app de uma ferramenta single-tenant (um único grupo fixo) em uma 
 
 ## Contexto do Projeto
 
-- Vanilla JS, sem build step, sem ES6 modules — variáveis globais, padrão `window.X`
+- Vanilla JS, sem 
+build step, sem ES6 modules — variáveis globais, padrão `window.X`
 - Firebase Realtime Database com dados reais do grupo "Estrelas FC" em produção
 - Mobile-first (320px–768px), touch
 - Stack não muda — sem migração para framework
