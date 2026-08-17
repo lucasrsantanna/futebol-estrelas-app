@@ -90,7 +90,11 @@ O que ocorrer primeiro entre os três gatilhos fecha o ciclo:
 - Só mensalistas votam.
 - Mensalistas e avulsos podem ser avaliados.
 - A cédula é livre: cada mensalista escolhe em quem votar (não precisa ter jogado
-  junto recentemente), 1–5 estrelas por pessoa avaliada, por bom senso.
+  junto recentemente), 1–10 estrelas por pessoa avaliada, por bom senso — mesma
+  escala já usada em todo o resto do app (badges, dashboard do grupo, etc). Sem
+  remapeamento: `teams.js` (linhas 147–150) já separa jogadores em baldes exatos de
+  10, 9 e 8 estrelas para balancear os times, e essa lógica depende da granularidade
+  1–10 — votar em 1–5 exigiria reescrevê-la para algo baseado em percentil/ranking.
 - Jogador que não vota no ciclo não sofre nenhuma consequência — sua própria nota
   continua sendo recalculada normalmente, com base nos votos que ele recebeu dos
   outros.
@@ -112,6 +116,17 @@ membros) para investigar antes de decidir.
 
 Não existe edição manual da estrela em nenhum ponto desse fluxo — a única ação do
 admin é aprovar ou rejeitar o resultado calculado.
+
+### Valor inicial de jogador novo
+
+Como a estrela nunca é editada manualmente — nem na criação — todo jogador novo
+nasce com **`estrelas: 5`**, o mesmo valor neutro que `teams.js` (linha 128) já usa
+para os jogadores genéricos. Vale tanto para quem entra num grupo pelo fluxo padrão
+(seção 1) quanto para quem é cadastrado pelo admin via FAB (cadastro rápido) — o
+campo de estrela manual sai da interface de cadastro também, não só da de edição.
+O valor `5` permanece até o primeiro ciclo de votação em que esse jogador bate o
+quórum (seção "Quórum e agregação") e o admin aprova o resultado; se isso nunca
+acontecer, o jogador simplesmente continua em `5`.
 
 ---
 
@@ -159,7 +174,7 @@ Complementa a estrutura definida em `2026-04-24` e `2026-04-28`.
     motivoFechamento: "manual" | "prazo" | "todosVotaram" | null
 
 /grupos/{grupoId}/ciclosVotacao/{cicloId}/votos/{jogadorIdVotante}/{jogadorIdAvaliado}
-    nota: number (1–5)
+    nota: number (1–10)
     criadoEm: ISO string
 
 /grupos/{grupoId}/ciclosVotacao/{cicloId}/resultados/{jogadorIdAvaliado}
@@ -199,7 +214,8 @@ continua lendo o mesmo campo `estrelas`, sem nenhuma mudança necessária ali.
 - `js/grupos.js` — cria jogador vinculado (`userId` preenchido) junto com o membro,
   no fluxo de entrada por convite e por aprovação de solicitação
 - `js/firebase.js` — CRUD de `ciclosVotacao`, `votos`, `resultados`
-- `js/players.js` — remove edição manual de estrelas da interface do admin
+- `js/players.js` — remove o campo de estrela manual tanto do cadastro rápido (FAB)
+  quanto da edição de jogador; novo jogador é criado com `estrelas: 5`
 - `index.html` — telas novas; condicionais de renderização por papel
 - `style.css` — estilos das telas novas
 
