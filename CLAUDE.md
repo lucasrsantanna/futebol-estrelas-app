@@ -7,6 +7,19 @@ Todas as mudanças devem ser aditivas e compatíveis com a estrutura existente.
 
 ---
 
+## ⚠️ PENDÊNCIA CRÍTICA — RBAC não está implementado
+O app já tem Firebase Auth (`js/auth.js`) e estrutura multi-tenant (`/grupos/{grupoId}/...`),
+e `state.js` já rastreia `papelNoGrupo` ('admin' | 'membro'). **Mas nenhuma tela do app
+checa esse valor.** Hoje, qualquer usuário autenticado — admin ou membro — consegue
+cadastrar jogador, editar estrelas, remover jogador, desmarcar presença de qualquer um,
+mexer no financeiro, etc. A tabela de permissões da spec
+`docs/superpowers/specs/2026-04-24-autenticacao-e-multi-tenant-design.md` (seção 3)
+descreve o comportamento esperado, mas ele não foi construído.
+**Bloqueia qualquer lançamento real além do grupo de teste atual.** Precisa virar seu
+próprio plano de implementação antes disso.
+
+---
+
 ## O que é o projeto
 Aplicativo web mobile-first para gerenciar peladas mensais de futebol.
 Funcionalidades: presença de jogadores, separação de times equilibrados com algoritmo
@@ -123,8 +136,8 @@ futebol-estrelas-default-rtdb/
 - [x] PWA — manifest.json + service worker para instalar no celular
 
 ## Funcionalidades pendentes (próximas a implementar)
+- [ ] **PRIORITÁRIO** — RBAC admin vs. membro nas telas (ver ⚠️ PENDÊNCIA CRÍTICA acima)
 - [ ] Compartilhamento via WhatsApp dos times formados
-- [ ] Firebase Authentication — admin vs jogador comum
 - [ ] Notificações push quando times forem separados
 
 ## Contexto do negócio
