@@ -75,10 +75,9 @@ A mudança central: todos os dados passam a viver sob `/grupos/{grupoId}/`. A es
 
 Provedor: **Firebase Auth** (já disponível no projeto Firebase).
 
-Três métodos de login:
+Dois métodos de login:
 - Google (OAuth)
 - Email + senha
-- Número de telefone (SMS)
 
 ### Estados do app
 
@@ -100,11 +99,12 @@ Dois papéis: **admin** e **membro**.
 | Ação | Admin | Membro |
 |---|---|---|
 | Marcar presença (qualquer jogador da lista) | ✅ | ✅ |
+| Desfazer presença marcada | ✅ | ❌ |
 | Ver times formados | ✅ | ✅ |
 | Ver próprio saldo financeiro | ✅ | ✅ |
 | Confirmar times | ✅ | ❌ |
 | Redistribuir times | ✅ | ❌ |
-| Editar estrelas de jogador | ✅ | ❌ |
+| Gerenciar ciclo de votação de estrelas (abrir, encerrar, aprovar resultados) | ✅ | ❌ |
 | Cadastrar jogador | ✅ | ❌ |
 | Importar lista WhatsApp | ✅ | ❌ |
 | Controle financeiro completo | ✅ | ❌ |
@@ -113,6 +113,8 @@ Dois papéis: **admin** e **membro**.
 | Configurações do grupo | ✅ | ❌ |
 
 Quando um membro acessa uma ação restrita, o elemento simplesmente não é exibido — sem mensagem de erro, sem botão desabilitado.
+
+Presença é sempre aditiva para o membro: ele só marca a própria presença, nunca desmarca. Desfazer uma presença marcada é exclusivo do admin.
 
 ---
 
@@ -145,7 +147,7 @@ Quando um membro acessa uma ação restrita, o elemento simplesmente não é exi
 
 **Tela de login**
 - Exibida para qualquer usuário não autenticado
-- Três botões: Google, Email+Senha, Telefone
+- Dois botões: Google, Email+Senha
 - Sem navegação para outras partes do app sem autenticação
 
 **Tela de boas-vindas**
