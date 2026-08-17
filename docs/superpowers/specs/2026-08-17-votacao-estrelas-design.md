@@ -32,29 +32,35 @@ continuam sendo sistemas independentes.
 ### Fluxo padrão (grupos novos, dali em diante)
 
 Quando alguém entra num grupo — por link de convite ou por aprovação de solicitação
-via Descobrir (specs `2026-04-24` e `2026-04-28`) — o registro em
-`/grupos/{grupoId}/jogadores/{jogadorId}` é criado **no mesmo momento** que o registro
-em `/grupos/{grupoId}/membros/{userId}`, já com `userId` preenchido. Não existe etapa
-de "reivindicar" jogador nesse caminho: jogador e conta nascem vinculados.
+via Descobrir (specs `2026-04-24` e `2026-04-28`) — o app checa se aquele grupo tem
+algum jogador órfão (`userId == null`):
+
+- **Sem órfãos** (caso comum, grupo criado direto na plataforma): cria o jogador
+  automaticamente, no mesmo momento que o registro de `membro`, já com `userId`
+  preenchido. Nada é exibido para o usuário — não existe etapa de "reivindicar".
+- **Com órfãos** (hoje, só o grupo "Estrelas FC" migrado): mostra a tela de autoclaim
+  em vez de criar o jogador de cara (ver abaixo). Cria um jogador novo automaticamente
+  só ficaria errado aqui — duplicaria a pessoa, já que ela provavelmente é um dos
+  órfãos.
 
 ### Autoclaim (ferramenta reaproveitável, na prática só para o "Estrelas FC" migrado)
 
-Alguns grupos podem ter jogadores sem conta vinculada (`userId == null`) — hoje,
-apenas o grupo migrado do Firebase de produção atual. Para esses casos:
+Ao entrar num grupo que tenha jogadores com `userId == null`, o novo membro vê uma
+tela "É você?" com três opções:
 
-- Ao entrar num grupo que tenha jogadores com `userId == null`, o novo membro vê uma
-  tela "É você?": lista dos jogadores órfãos do grupo (nome, estrelas atuais, tipo),
-  com opção de tocar em "Esse sou eu" para vincular o próprio `userId` àquele
-  `jogadorId`.
-- **Pulável** — botão "Agora não". A pessoa usa o app normalmente e pode voltar a
-  reivindicar depois, pelo próprio perfil no grupo.
-- Sem preparo do admin: nenhuma lista de códigos ou links individuais para gerar ou
-  distribuir.
-- Mitigação de nomes repetidos: a lista mostra estrelas e tipo junto do nome para
-  desambiguar; se mesmo assim alguém vincular errado, o admin corrige manualmente pela
-  tela de Gestão (trocar o `userId` vinculado a um `jogadorId`).
-- O admin passa pelo mesmo fluxo — nenhum tratamento especial para quem rodou a
-  migração.
+- **"Esse sou eu"** — lista dos jogadores órfãos do grupo (nome, estrelas atuais,
+  tipo); tocar em um vincula o próprio `userId` àquele `jogadorId`.
+- **"Sou novo, não estou nessa lista"** — cria um jogador novo do zero para essa
+  pessoa (mesmo fluxo do caso "sem órfãos" acima), para quem entra num grupo com
+  histórico migrado mas nunca jogou lá antes.
+- **"Agora não"** — pulável. A pessoa usa o app normalmente sem jogador vinculado
+  ainda, e pode voltar a decidir depois pelo próprio perfil no grupo.
+
+Sem preparo do admin: nenhuma lista de códigos ou links individuais para gerar ou
+distribuir. Mitigação de nomes repetidos: a lista mostra estrelas e tipo junto do nome
+para desambiguar; se mesmo assim alguém vincular errado, o admin corrige manualmente
+pela tela de Gestão (trocar o `userId` vinculado a um `jogadorId`). O admin passa pelo
+mesmo fluxo — nenhum tratamento especial para quem rodou a migração.
 
 ---
 
