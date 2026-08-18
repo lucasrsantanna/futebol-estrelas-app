@@ -90,3 +90,10 @@ window.cancelarExclusao = function() {
     sessaoParaExcluir    = null;
     historicoParaExcluir = null;
 };
+
+// ---------- Menu por papel ----------
+
+function atualizarMenuPorPapel() {
+    const el = document.getElementById('menuGestao');
+    if (el) el.style.display = papelNoGrupo === 'admin' ? 'flex' : 'none';
+}

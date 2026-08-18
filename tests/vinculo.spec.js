@@ -148,3 +148,21 @@ test.describe('Tela de autoclaim', () => {
         await page.evaluate((id) => database.ref(`grupos/${id}`).remove(), grupoId);
     });
 });
+
+test.describe('Gestão do Grupo — visibilidade por papel', () => {
+    test.beforeEach(async ({ page }) => {
+        await fazerLogin(page);
+        await page.locator('#mainApp').waitFor({ state: 'visible', timeout: 15000 });
+    });
+
+    test('visível para admin, escondido para membro', async ({ page }) => {
+        // A conta de teste é admin do próprio grupo (criou ele em fluxo.spec.js)
+        await expect(page.locator('#menuGestao')).toBeVisible();
+
+        await page.evaluate(() => { papelNoGrupo = 'membro'; atualizarMenuPorPapel(); });
+        await expect(page.locator('#menuGestao')).toBeHidden();
+
+        await page.evaluate(() => { papelNoGrupo = 'admin'; atualizarMenuPorPapel(); });
+        await expect(page.locator('#menuGestao')).toBeVisible();
+    });
+});

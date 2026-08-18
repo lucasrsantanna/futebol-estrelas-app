@@ -161,6 +161,9 @@
                 <button class="menu-item" onclick="showSection('cadastro')">
                     <span class="menu-icon">➕</span><span>Cadastrar Jogador</span>
                 </button>
+                <button class="menu-item" id="menuGestao" onclick="showSection('gestao')" style="display:none;">
+                    <span class="menu-icon">⚙️</span><span>Gestão do Grupo</span>
+                </button>
             </div>
             <div style="padding: 15px; border-top: 1px solid #e0e0e0; margin-top: auto; display: flex; flex-direction: column; gap: 10px;">
                 <div id="sidebarSyncStatus" style="font-size: 12px; color: #666; display: flex; align-items: center; gap: 8px;">
@@ -337,6 +340,17 @@
                     </select>
                 </div>
                 <button class="btn btn-full" id="btnCadastrar" onclick="cadastrarJogador()">➕ Cadastrar Jogador</button>
+            </div>
+
+            <!-- GESTÃO DO GRUPO (admin) -->
+            <div id="gestao" class="content-section">
+                <h2>⚙️ Gestão do Grupo</h2>
+
+                <div class="form-group">
+                    <label>Vínculos de Jogadores</label>
+                    <p style="color:#666;font-size:13px;margin-bottom:10px;">Corrija manualmente qual conta está vinculada a cada jogador — use se alguém reivindicou o jogador errado na tela de "É você?".</p>
+                    <div id="listaVinculos"></div>
+                </div>
             </div>
 
         </div><!-- /main-content -->

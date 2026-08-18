@@ -97,6 +97,7 @@ function mostrarApp() {
     if (el && usuarioAtual) {
         el.textContent = usuarioAtual.displayName || usuarioAtual.email || 'Usuário';
     }
+    atualizarMenuPorPapel();
 }
 
 // ---------- Login ----------
