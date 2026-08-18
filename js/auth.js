@@ -46,8 +46,7 @@ async function entrarNoGrupo(grupoId) {
     const membroSnap = await database.ref(`grupos/${grupoId}/membros/${usuarioAtual.uid}`).get();
     papelNoGrupo = membroSnap.val()?.role || 'membro';
 
-    mostrarApp();
-    inicializarListeners(grupoId);
+    await resolverVinculoJogador(grupoId);
 }
 
 // ---------- Helpers privados ----------
