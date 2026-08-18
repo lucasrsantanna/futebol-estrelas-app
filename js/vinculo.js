@@ -40,4 +40,5 @@ function _finalizarEntradaNoGrupo(grupoId) {
 // Stub — implementado na Task 3 deste plano.
 function mostrarTelaAutoclaim(grupoId, orfaos) {
     console.warn('mostrarTelaAutoclaim ainda não implementado', grupoId, orfaos);
+    _finalizarEntradaNoGrupo(grupoId);
 }
