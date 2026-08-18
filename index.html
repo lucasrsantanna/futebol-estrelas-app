@@ -111,6 +111,22 @@
         </div>
     </div>
 
+    <!-- TELA AUTOCLAIM (vincular jogador existente) -->
+    <div id="telaAutoclaim" style="display: none;">
+        <div class="login-container">
+            <div class="login-logo">🤔</div>
+            <h1 class="login-titulo">É você?</h1>
+            <p class="login-subtitulo">Esse grupo tem jogadores sem conta vinculada. Você é um deles?</p>
+
+            <div id="autoclaimLista" style="width:100%;max-height:280px;overflow-y:auto;"></div>
+
+            <div style="display: flex; flex-direction: column; gap: 12px; width: 100%; margin-top: 12px;">
+                <button class="btn btn-full" onclick="criarComoNovoJogador()" style="background: #666;">Sou novo, não estou nessa lista</button>
+                <button class="login-voltar-btn" onclick="pularAutoclaim()">Agora não</button>
+            </div>
+        </div>
+    </div>
+
     <div class="sync-status" id="syncStatus" style="display: none;">🟢 Sincronizado</div>
 
     <div class="container" id="mainApp" style="display: none;">

@@ -37,8 +37,44 @@ function _finalizarEntradaNoGrupo(grupoId) {
     inicializarListeners(grupoId);
 }
 
-// Stub — implementado na Task 3 deste plano.
 function mostrarTelaAutoclaim(grupoId, orfaos) {
-    console.warn('mostrarTelaAutoclaim ainda não implementado', grupoId, orfaos);
-    _finalizarEntradaNoGrupo(grupoId);
+    document.getElementById('loadingScreen').style.display = 'none';
+    document.getElementById('telaLogin').style.display     = 'none';
+    document.getElementById('telaBemVindo').style.display  = 'none';
+    document.getElementById('mainApp').style.display       = 'none';
+
+    const tela = document.getElementById('telaAutoclaim');
+    tela.style.display = 'flex';
+    tela.dataset.grupoId = grupoId;
+
+    document.getElementById('autoclaimLista').innerHTML = orfaos.map(j => `
+        <div class="list-item" onclick="vincularJogadorExistente('${j.id}')">
+            <div class="item-content">
+                <div class="player-info">
+                    <div class="player-name">${j.nome} ${j.tipo === 'avulso' ? '(Avulso)' : '(Mensalista)'}</div>
+                    <div class="player-stars"><span class="star-count">${j.estrelas} estrelas</span></div>
+                </div>
+            </div>
+        </div>
+    `).join('');
 }
+
+window.vincularJogadorExistente = async function(jogadorId) {
+    const grupoId = document.getElementById('telaAutoclaim').dataset.grupoId;
+    await database.ref(`grupos/${grupoId}/jogadores/${jogadorId}/userId`).set(usuarioAtual.uid);
+    document.getElementById('telaAutoclaim').style.display = 'none';
+    _finalizarEntradaNoGrupo(grupoId);
+};
+
+window.criarComoNovoJogador = async function() {
+    const grupoId = document.getElementById('telaAutoclaim').dataset.grupoId;
+    await criarJogadorVinculado(grupoId, usuarioAtual.uid, usuarioAtual.displayName || usuarioAtual.email || 'Jogador');
+    document.getElementById('telaAutoclaim').style.display = 'none';
+    _finalizarEntradaNoGrupo(grupoId);
+};
+
+window.pularAutoclaim = function() {
+    const grupoId = document.getElementById('telaAutoclaim').dataset.grupoId;
+    document.getElementById('telaAutoclaim').style.display = 'none';
+    _finalizarEntradaNoGrupo(grupoId);
+};

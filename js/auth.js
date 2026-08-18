@@ -73,6 +73,7 @@ function mostrarTelaLogin() {
     document.getElementById('loadingScreen').style.display  = 'none';
     document.getElementById('telaLogin').style.display      = 'flex';
     document.getElementById('telaBemVindo').style.display   = 'none';
+    document.getElementById('telaAutoclaim').style.display  = 'none';
     document.getElementById('mainApp').style.display        = 'none';
 }
 
@@ -80,6 +81,7 @@ function mostrarTelaBemVindo() {
     document.getElementById('loadingScreen').style.display  = 'none';
     document.getElementById('telaLogin').style.display      = 'none';
     document.getElementById('telaBemVindo').style.display   = 'flex';
+    document.getElementById('telaAutoclaim').style.display  = 'none';
     document.getElementById('mainApp').style.display        = 'none';
 }
 
@@ -87,6 +89,7 @@ function mostrarApp() {
     document.getElementById('loadingScreen').style.display  = 'none';
     document.getElementById('telaLogin').style.display      = 'none';
     document.getElementById('telaBemVindo').style.display   = 'none';
+    document.getElementById('telaAutoclaim').style.display  = 'none';
     document.getElementById('mainApp').style.display        = 'block';
     hideLoading();
 
