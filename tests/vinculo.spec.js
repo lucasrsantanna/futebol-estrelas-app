@@ -195,6 +195,38 @@ test.describe('Gestão do Grupo — correção manual de vínculo', () => {
     });
 });
 
+test.describe('Presença sincronizada via Firebase', () => {
+    test.beforeEach(async ({ page }) => {
+        await fazerLogin(page);
+        await page.locator('#mainApp').waitFor({ state: 'visible', timeout: 15000 });
+    });
+
+    test('togglePresenca grava e remove em grupos/{id}/presencaAtual', async ({ page }) => {
+        const jogadorId = await page.evaluate(async () => {
+            const j = await criarJogadorVinculado(grupoAtualId, 'uid-fake-presenca-sync-' + Date.now(), 'Presença Sync Teste');
+            return j.id;
+        });
+
+        await page.evaluate((id) => togglePresenca(id), jogadorId);
+        await page.waitForTimeout(500);
+        let val = await page.evaluate(async (id) => {
+            const snap = await database.ref(`grupos/${grupoAtualId}/presencaAtual/${id}`).get();
+            return snap.val();
+        }, jogadorId);
+        expect(val).toBe(true);
+
+        await page.evaluate((id) => togglePresenca(id), jogadorId);
+        await page.waitForTimeout(500);
+        val = await page.evaluate(async (id) => {
+            const snap = await database.ref(`grupos/${grupoAtualId}/presencaAtual/${id}`).get();
+            return snap.val();
+        }, jogadorId);
+        expect(val).toBeFalsy(); // ausente ou null — RTDB não guarda chave com valor null
+
+        await page.evaluate((id) => database.ref(`grupos/${grupoAtualId}/jogadores/${id}`).remove(), jogadorId);
+    });
+});
+
 test.describe('Estrela não é mais editável manualmente', () => {
     test.beforeEach(async ({ page }) => {
         await fazerLogin(page);

@@ -263,44 +263,36 @@ window.limparPesquisa = function() {
 // ---------- Presença ----------
 
 window.togglePresenca = function(id) {
-    const idx = jogadoresPresentes.indexOf(id);
-    if (idx > -1) {
-        jogadoresPresentes.splice(idx, 1);
-    } else {
-        jogadoresPresentes.push(id);
-        if (navigator.vibrate) navigator.vibrate(30);
-    }
-    salvarSelecao();
-    exibirJogadoresPresentes();
+    const jaPresente = jogadoresPresentes.includes(id);
+    marcarPresencaDB(id, !jaPresente);
+    if (!jaPresente && navigator.vibrate) navigator.vibrate(30);
 };
 
 window.marcarTodosMensalistas = function() {
-    Object.values(jogadores)
+    const ids = Object.values(jogadores)
         .filter(j => (j.tipo || 'mensalista') === 'mensalista')
-        .forEach(j => { if (!jogadoresPresentes.includes(j.id)) jogadoresPresentes.push(j.id); });
-    if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
-    salvarSelecao();
-    exibirJogadoresPresentes();
+        .map(j => j.id)
+        .filter(id => !jogadoresPresentes.includes(id));
+    marcarVariosPresencaDB(ids);
+    if (ids.length && navigator.vibrate) navigator.vibrate([30, 50, 30]);
 };
 
 window.marcarTodosAvulsos = function() {
-    Object.values(jogadores)
+    const ids = Object.values(jogadores)
         .filter(j => j.tipo === 'avulso')
-        .forEach(j => { if (!jogadoresPresentes.includes(j.id)) jogadoresPresentes.push(j.id); });
-    if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
-    salvarSelecao();
-    exibirJogadoresPresentes();
+        .map(j => j.id)
+        .filter(id => !jogadoresPresentes.includes(id));
+    marcarVariosPresencaDB(ids);
+    if (ids.length && navigator.vibrate) navigator.vibrate([30, 50, 30]);
 };
 
 window.limparTodosCheckbox = function() {
-    jogadoresPresentes = [];
-    localStorage.removeItem('jogadoresPresentesSelecionados');
+    limparPresencaDB();
     if (navigator.vibrate) navigator.vibrate(50);
     document.getElementById('teamsContainer').style.display = 'none';
     document.getElementById('balanceInfo').style.display = 'none';
     ultimaDistribuicao = null;
     timesFormados = null;
-    exibirJogadoresPresentes();
 };
 
 function atualizarContador() {
