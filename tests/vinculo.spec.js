@@ -194,3 +194,52 @@ test.describe('Gestão do Grupo — correção manual de vínculo', () => {
         await page.evaluate((id) => database.ref(`grupos/${grupoAtualId}/jogadores/${id}`).remove(), jogadorId);
     });
 });
+
+test.describe('Estrela não é mais editável manualmente', () => {
+    test.beforeEach(async ({ page }) => {
+        await fazerLogin(page);
+        await page.locator('#mainApp').waitFor({ state: 'visible', timeout: 15000 });
+    });
+
+    test('cadastro rápido (FAB) cria jogador com estrelas: 5, sem campo de estrela', async ({ page }) => {
+        await page.click('button.fab-button');
+        await page.locator('#quickAddModal').waitFor({ state: 'visible' });
+        await expect(page.locator('#quickEstrelas')).toHaveCount(0);
+
+        const nome = `Jogador Teste ${Date.now()}`;
+        await page.fill('#quickNome', nome);
+        await page.click('button[onclick="cadastrarRapido()"]');
+        await page.waitForTimeout(1200);
+
+        const jogador = await page.evaluate((nomeBuscado) =>
+            Object.values(jogadores).find(j => j.nome === nomeBuscado)
+        , nome);
+
+        expect(jogador).toBeTruthy();
+        expect(jogador.estrelas).toBe(5);
+
+        await page.evaluate((id) => database.ref(`grupos/${grupoAtualId}/jogadores/${id}`).remove(), jogador.id);
+    });
+
+    test('editar jogador não mostra mais campo de estrela', async ({ page }) => {
+        const nome = `Editar Teste ${Date.now()}`;
+        const jogadorId = await page.evaluate(async (nome) => {
+            const j = await criarJogadorVinculado(grupoAtualId, 'uid-fake-editar-' + Date.now(), nome);
+            return j.id;
+        }, nome);
+
+        await page.evaluate(() => document.querySelector('button.menu-btn').click());
+        await page.waitForTimeout(400);
+        await page.evaluate(() => document.querySelector("button[onclick=\"showSection('jogadores')\"]").click());
+        await page.waitForSelector('#jogadores.active');
+
+        // Escopado a #jogadores: o mesmo jogador também renderiza um botão idêntico
+        // (mesmo onclick) na seção #separar, que fica no DOM oculta via display:none
+        // em vez de removida — sem o escopo, page.click resolve para essa cópia oculta.
+        await page.click(`#jogadores button[onclick="editarJogador('${jogadorId}', event)"]`);
+        await page.locator('#editModal').waitFor({ state: 'visible' });
+        await expect(page.locator('#editEstrelas')).toHaveCount(0);
+
+        await page.evaluate((id) => database.ref(`grupos/${grupoAtualId}/jogadores/${id}`).remove(), jogadorId);
+    });
+});

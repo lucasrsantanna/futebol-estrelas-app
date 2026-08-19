@@ -6,7 +6,6 @@
 
 window.cadastrarJogador = function() {
     const nome = document.getElementById('nomeJogador').value.trim();
-    const estrelas = parseInt(document.getElementById('estrelas').value);
     const tipo = document.getElementById('tipoJogador').value;
     const btn = document.getElementById('btnCadastrar');
 
@@ -19,10 +18,9 @@ window.cadastrarJogador = function() {
     btn.disabled = true;
     btn.textContent = '⏳ Cadastrando...';
 
-    salvarJogador({ id: Date.now().toString(), nome, estrelas, tipo, criadoEm: new Date().toISOString() });
+    salvarJogador({ id: Date.now().toString(), nome, estrelas: 5, tipo, criadoEm: new Date().toISOString() });
 
     document.getElementById('nomeJogador').value = '';
-    document.getElementById('estrelas').value = '1';
     document.getElementById('tipoJogador').value = 'mensalista';
 
     setTimeout(() => {
@@ -37,7 +35,6 @@ window.cadastrarJogador = function() {
 window.abrirCadastroRapido = function() {
     document.getElementById('quickAddModal').style.display = 'flex';
     document.getElementById('quickNome').value = '';
-    document.getElementById('quickEstrelas').value = '5';
     document.getElementById('quickTipo').value = 'mensalista';
     document.getElementById('quickJaSelecionar').checked = true;
     setTimeout(() => document.getElementById('quickNome').focus(), 100);
@@ -49,7 +46,6 @@ window.fecharCadastroRapido = function() {
 
 window.cadastrarRapido = function() {
     const nome = document.getElementById('quickNome').value.trim();
-    const estrelas = parseInt(document.getElementById('quickEstrelas').value);
     const tipo = document.getElementById('quickTipo').value;
     const jaSelecionar = document.getElementById('quickJaSelecionar').checked;
     const btn = document.getElementById('btnQuickAdd');
@@ -62,7 +58,7 @@ window.cadastrarRapido = function() {
     btn.disabled = true;
     btn.textContent = '⏳ Cadastrando...';
 
-    const novo = { id: Date.now().toString(), nome, estrelas, tipo, criadoEm: new Date().toISOString() };
+    const novo = { id: Date.now().toString(), nome, estrelas: 5, tipo, criadoEm: new Date().toISOString() };
     salvarJogador(novo);
 
     if (jaSelecionar) {
@@ -86,7 +82,6 @@ window.editarJogador = function(id, event) {
     jogadorEditando = jogadores[id];
     if (!jogadorEditando) return;
     document.getElementById('editNome').value = jogadorEditando.nome;
-    document.getElementById('editEstrelas').value = jogadorEditando.estrelas;
     document.getElementById('editTipoJogador').value = jogadorEditando.tipo || 'mensalista';
     document.getElementById('editModal').style.display = 'flex';
 };
@@ -99,7 +94,6 @@ window.salvarEdicao = function() {
 
     salvarJogador({
         ...jogadorEditando,
-        estrelas: parseInt(document.getElementById('editEstrelas').value),
         tipo: document.getElementById('editTipoJogador').value,
         atualizadoEm: new Date().toISOString()
     });
