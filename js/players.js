@@ -263,6 +263,9 @@ window.limparPesquisa = function() {
 // ---------- Presença ----------
 
 window.togglePresenca = function(id) {
+    const jaPresente = jogadoresPresentes.includes(id);
+    if (jaPresente && papelNoGrupo !== 'admin') return;
+
     const idx = jogadoresPresentes.indexOf(id);
     if (idx > -1) {
         jogadoresPresentes.splice(idx, 1);
@@ -293,6 +296,8 @@ window.marcarTodosAvulsos = function() {
 };
 
 window.limparTodosCheckbox = function() {
+    if (papelNoGrupo !== 'admin') return;
+
     jogadoresPresentes = [];
     localStorage.removeItem('jogadoresPresentesSelecionados');
     if (navigator.vibrate) navigator.vibrate(50);
