@@ -80,6 +80,7 @@ window.processarListaWhatsApp = function() {
 window.confirmarImportacao = function() {
     const baseTs = Date.now();
     let novoIdx = 0;
+    const idsParaMarcar = [];
 
     _importResultados.forEach(r => {
         const ehNovoAmbiguo = r.categoria === 'ambiguo' && r.selecionadoId === 'novo';
@@ -90,16 +91,15 @@ window.confirmarImportacao = function() {
             const nome = normalizarNome(r.nomeEditavel || r.nomeWhatsApp);
             const tipo = r.tipoEditavel || r.tipoWhatsApp;
             salvarJogador({ id, nome, estrelas: r.estrelas, tipo, criadoEm: new Date().toISOString() });
-            if (!jogadoresPresentes.includes(id)) jogadoresPresentes.push(id);
+            idsParaMarcar.push(id);
         } else if (r.categoria === 'confirmado' && r.incluir && r.selecionadoId) {
-            if (!jogadoresPresentes.includes(r.selecionadoId)) jogadoresPresentes.push(r.selecionadoId);
+            idsParaMarcar.push(r.selecionadoId);
         } else if (r.categoria === 'ambiguo' && r.selecionadoId && r.selecionadoId !== 'novo') {
-            if (!jogadoresPresentes.includes(r.selecionadoId)) jogadoresPresentes.push(r.selecionadoId);
+            idsParaMarcar.push(r.selecionadoId);
         }
     });
 
-    salvarSelecao();
-    exibirJogadoresPresentes();
+    marcarVariosPresencaDB(idsParaMarcar);
     fecharImportModal();
 };
 
