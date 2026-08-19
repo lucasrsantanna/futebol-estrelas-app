@@ -250,6 +250,18 @@ test.describe('Estrela não é mais editável manualmente', () => {
         expect(jogador).toBeTruthy();
         expect(jogador.estrelas).toBe(5);
 
+        // quickJaSelecionar vem marcado por padrão — cadastrarRapido deve gravar
+        // a presença em grupos/{id}/presencaAtual (via Firebase), não só no array
+        // local em memória, senão o próximo disparo do listener de presencaAtual
+        // (por qualquer outro motivo) sobrescreve jogadoresPresentes e perde essa
+        // marcação silenciosamente.
+        const presenteNoFirebase = await page.evaluate(async (id) => {
+            const snap = await database.ref(`grupos/${grupoAtualId}/presencaAtual/${id}`).get();
+            return snap.val();
+        }, jogador.id);
+        expect(presenteNoFirebase).toBe(true);
+
+        await page.evaluate((id) => database.ref(`grupos/${grupoAtualId}/presencaAtual/${id}`).remove(), jogador.id);
         await page.evaluate((id) => database.ref(`grupos/${grupoAtualId}/jogadores/${id}`).remove(), jogador.id);
     });
 

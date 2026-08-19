@@ -62,8 +62,7 @@ window.cadastrarRapido = function() {
     salvarJogador(novo);
 
     if (jaSelecionar) {
-        jogadoresPresentes.push(novo.id);
-        salvarSelecao();
+        marcarPresencaDB(novo.id, true);
     }
 
     setTimeout(() => {
@@ -114,7 +113,7 @@ window.removerJogador = function() {
     btn.disabled = true;
     btn.textContent = '⏳ Removendo...';
 
-    jogadoresPresentes = jogadoresPresentes.filter(id => id !== jogadorEditando.id);
+    marcarPresencaDB(jogadorEditando.id, false);
 
     // Limpar restrições do jogador removido
     Object.values(restricoes).forEach(r => {
