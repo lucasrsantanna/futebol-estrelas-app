@@ -28,6 +28,7 @@ window.showSection = function(sectionName) {
     else if (sectionName === 'separar')    exibirJogadoresPresentes();
     else if (sectionName === 'financeiro') mostrarAbaFinanceiro('sessoes');
     else if (sectionName === 'historico')  exibirHistorico();
+    else if (sectionName === 'gestao')     exibirVinculosJogadores();
 };
 
 // ---------- Sync status ----------

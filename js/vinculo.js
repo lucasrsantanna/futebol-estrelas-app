@@ -78,3 +78,42 @@ window.pularAutoclaim = function() {
     document.getElementById('telaAutoclaim').style.display = 'none';
     _finalizarEntradaNoGrupo(grupoId);
 };
+
+async function _carregarMembrosComNomes(grupoId) {
+    const membrosSnap = await database.ref(`grupos/${grupoId}/membros`).get();
+    const membros = membrosSnap.val() || {};
+    const uids = Object.keys(membros);
+    const nomes = await Promise.all(uids.map(uid => database.ref(`usuarios/${uid}`).get()));
+    return uids.map((uid, i) => ({
+        uid,
+        role: membros[uid].role,
+        nome: nomes[i].val()?.nome || uid
+    }));
+}
+
+async function exibirVinculosJogadores() {
+    const container = document.getElementById('listaVinculos');
+    const membros = await _carregarMembrosComNomes(grupoAtualId);
+
+    container.innerHTML = Object.values(jogadores).map(j => `
+        <div class="list-item">
+            <div class="item-content">
+                <div class="player-info">
+                    <div class="player-name">${j.nome}</div>
+                    <div class="player-stars">
+                        <span class="star-count">${j.userId ? 'Vinculado a: ' + (membros.find(m => m.uid === j.userId)?.nome || j.userId) : 'Não vinculado'}</span>
+                    </div>
+                </div>
+                <select onchange="corrigirVinculoJogador('${j.id}', this.value)" style="max-width:140px;">
+                    <option value="">— nenhum —</option>
+                    ${membros.map(m => `<option value="${m.uid}" ${j.userId === m.uid ? 'selected' : ''}>${m.nome}</option>`).join('')}
+                </select>
+            </div>
+        </div>
+    `).join('');
+}
+
+window.corrigirVinculoJogador = async function(jogadorId, novoUserId) {
+    await database.ref(`grupos/${grupoAtualId}/jogadores/${jogadorId}/userId`).set(novoUserId || null);
+    exibirVinculosJogadores();
+};

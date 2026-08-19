@@ -166,3 +166,31 @@ test.describe('Gestão do Grupo — visibilidade por papel', () => {
         await expect(page.locator('#menuGestao')).toBeVisible();
     });
 });
+
+test.describe('Gestão do Grupo — correção manual de vínculo', () => {
+    test('Gestão → Vínculos de Jogadores renderiza sem erro e permite corrigir', async ({ page }) => {
+        await fazerLogin(page);
+        await page.locator('#mainApp').waitFor({ state: 'visible', timeout: 15000 });
+
+        const jogadorId = await page.evaluate(async () => {
+            const j = await criarJogadorVinculado(grupoAtualId, 'uid-fake-vinculo-' + Date.now(), 'Vínculo Teste');
+            return j.id;
+        });
+
+        await page.evaluate(() => document.querySelector('button.menu-btn').click());
+        await page.waitForTimeout(400);
+        await page.evaluate(() => document.querySelector("button[onclick=\"showSection('gestao')\"]").click());
+        await page.waitForSelector('#gestao.active', { timeout: 10000 });
+
+        await expect(page.locator('#listaVinculos')).toContainText('Vínculo Teste');
+
+        await page.evaluate((id) => window.corrigirVinculoJogador(id, ''), jogadorId);
+        const userIdDepois = await page.evaluate(async (id) => {
+            const snap = await database.ref(`grupos/${grupoAtualId}/jogadores/${id}/userId`).get();
+            return snap.val();
+        }, jogadorId);
+        expect(userIdDepois).toBeNull();
+
+        await page.evaluate((id) => database.ref(`grupos/${grupoAtualId}/jogadores/${id}`).remove(), jogadorId);
+    });
+});
