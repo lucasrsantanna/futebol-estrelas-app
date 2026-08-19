@@ -54,6 +54,11 @@ function inicializarListeners(grupoId) {
     database.ref(`grupos/${grupoId}/presencaAtual`).on('value', (snapshot) => {
         jogadoresPresentes = Object.keys(snapshot.val() || {});
         exibirJogadoresPresentes();
+        if (document.querySelector('.content-section.active')?.id === 'gestao') exibirCorrecaoPresenca();
+    });
+
+    database.ref(`grupos/${grupoId}/presencaTravada`).on('value', (snapshot) => {
+        presencaTravada = snapshot.val() === true;
     });
 
     database.ref('.info/connected').on('value', (snapshot) => {
@@ -69,6 +74,7 @@ function desligarListeners(grupoId) {
     database.ref(`grupos/${grupoId}/restricoes`).off();
     database.ref(`grupos/${grupoId}/historicoTimes`).off();
     database.ref(`grupos/${grupoId}/presencaAtual`).off();
+    database.ref(`grupos/${grupoId}/presencaTravada`).off();
 }
 
 // ---------- Jogadores ----------
@@ -220,6 +226,7 @@ function limparPresencaDB() {
     if (database && grupoAtualId) {
         updateSyncStatus('syncing');
         database.ref(`grupos/${grupoAtualId}/presencaAtual`).remove();
+        database.ref(`grupos/${grupoAtualId}/presencaTravada`).set(false);
     } else {
         jogadoresPresentes = [];
         localStorage.removeItem('jogadoresPresentesSelecionados');

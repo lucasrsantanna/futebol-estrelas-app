@@ -28,7 +28,7 @@ window.showSection = function(sectionName) {
     else if (sectionName === 'separar')    exibirJogadoresPresentes();
     else if (sectionName === 'financeiro') mostrarAbaFinanceiro('sessoes');
     else if (sectionName === 'historico')  exibirHistorico();
-    else if (sectionName === 'gestao')     exibirVinculosJogadores();
+    else if (sectionName === 'gestao')     { exibirVinculosJogadores(); exibirCorrecaoPresenca(); }
 };
 
 // ---------- Sync status ----------
@@ -95,6 +95,9 @@ window.cancelarExclusao = function() {
 // ---------- Menu por papel ----------
 
 function atualizarMenuPorPapel() {
-    const el = document.getElementById('menuGestao');
-    if (el) el.style.display = papelNoGrupo === 'admin' ? 'flex' : 'none';
+    const menuGestao = document.getElementById('menuGestao');
+    if (menuGestao) menuGestao.style.display = papelNoGrupo === 'admin' ? 'flex' : 'none';
+
+    const btnLimpar = document.getElementById('btnLimparPresenca');
+    if (btnLimpar) btnLimpar.style.display = papelNoGrupo === 'admin' ? 'flex' : 'none';
 }

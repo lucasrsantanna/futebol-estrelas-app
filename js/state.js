@@ -32,3 +32,4 @@ let swapJogadorSelecionado = null;
 let swapModoAtivo          = false;
 let genericosAdicionados   = 0;
 let confirmacaoEmAndamento = false;
+let presencaTravada        = false;

@@ -287,3 +287,76 @@ test.describe('Estrela não é mais editável manualmente', () => {
         await page.evaluate((id) => database.ref(`grupos/${grupoAtualId}/jogadores/${id}`).remove(), jogadorId);
     });
 });
+
+test.describe('Presença — autocheckin com trava pós-confirmação', () => {
+    test.beforeEach(async ({ page }) => {
+        await fazerLogin(page);
+        await page.locator('#mainApp').waitFor({ state: 'visible', timeout: 15000 });
+    });
+
+    test('membro só marca/desmarca o próprio jogador; admin marca qualquer um', async ({ page }) => {
+        const { meuId, outroId } = await page.evaluate(async () => {
+            const meu = await criarJogadorVinculado(grupoAtualId, usuarioAtual.uid, 'Eu Presença Teste');
+            const outro = await criarJogadorVinculado(grupoAtualId, 'uid-fake-outro-' + Date.now(), 'Outro Presença Teste');
+            return { meuId: meu.id, outroId: outro.id };
+        });
+
+        await page.evaluate(() => { papelNoGrupo = 'membro'; });
+
+        await page.evaluate((id) => togglePresenca(id), outroId);
+        let presente = await page.evaluate((id) => jogadoresPresentes.includes(id), outroId);
+        expect(presente).toBe(false); // membro não conseguiu marcar o jogador de outra pessoa
+
+        await page.evaluate((id) => togglePresenca(id), meuId);
+        presente = await page.evaluate((id) => jogadoresPresentes.includes(id), meuId);
+        expect(presente).toBe(true); // membro conseguiu marcar o próprio jogador
+
+        await page.evaluate(() => { papelNoGrupo = 'admin'; });
+        await page.evaluate((id) => togglePresenca(id), outroId);
+        presente = await page.evaluate((id) => jogadoresPresentes.includes(id), outroId);
+        expect(presente).toBe(true); // admin marca qualquer jogador
+
+        await page.evaluate(({ meuId, outroId }) => {
+            database.ref(`grupos/${grupoAtualId}/jogadores/${meuId}`).remove();
+            database.ref(`grupos/${grupoAtualId}/jogadores/${outroId}`).remove();
+            database.ref(`grupos/${grupoAtualId}/presencaAtual/${meuId}`).remove();
+            database.ref(`grupos/${grupoAtualId}/presencaAtual/${outroId}`).remove();
+        }, { meuId, outroId });
+    });
+
+    test('presença travada bloqueia todo mundo, exceto correção manual do admin', async ({ page }) => {
+        const jogadorId = await page.evaluate(async () => {
+            const j = await criarJogadorVinculado(grupoAtualId, usuarioAtual.uid, 'Trava Presença Teste');
+            return j.id;
+        });
+
+        await page.evaluate(() => { papelNoGrupo = 'admin'; presencaTravada = true; });
+
+        await page.evaluate((id) => togglePresenca(id), jogadorId);
+        let presente = await page.evaluate((id) => jogadoresPresentes.includes(id), jogadorId);
+        expect(presente).toBe(false); // trava bloqueia até o admin pelo fluxo normal
+
+        await page.evaluate((id) => corrigirPresencaManual(id, true), jogadorId);
+        await page.waitForTimeout(500);
+        const val = await page.evaluate(async (id) => {
+            const snap = await database.ref(`grupos/${grupoAtualId}/presencaAtual/${id}`).get();
+            return snap.val();
+        }, jogadorId);
+        expect(val).toBe(true); // correção manual ignora a trava
+
+        await page.evaluate(() => { presencaTravada = false; });
+        await page.evaluate((id) => {
+            database.ref(`grupos/${grupoAtualId}/jogadores/${id}`).remove();
+            database.ref(`grupos/${grupoAtualId}/presencaAtual/${id}`).remove();
+        }, jogadorId);
+    });
+
+    test('botão Limpar some para membro', async ({ page }) => {
+        await expect(page.locator('#btnLimparPresenca')).toBeVisible();
+
+        await page.evaluate(() => { papelNoGrupo = 'membro'; atualizarMenuPorPapel(); });
+        await expect(page.locator('#btnLimparPresenca')).toBeHidden();
+
+        await page.evaluate(() => { papelNoGrupo = 'admin'; atualizarMenuPorPapel(); });
+    });
+});

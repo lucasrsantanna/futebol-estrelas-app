@@ -117,3 +117,29 @@ window.corrigirVinculoJogador = async function(jogadorId, novoUserId) {
     await database.ref(`grupos/${grupoAtualId}/jogadores/${jogadorId}/userId`).set(novoUserId || null);
     exibirVinculosJogadores();
 };
+
+function exibirCorrecaoPresenca() {
+    const container = document.getElementById('listaCorrecaoPresenca');
+    container.innerHTML = Object.values(jogadores).map(j => {
+        const presente = jogadoresPresentes.includes(j.id);
+        return `
+            <div class="list-item ${presente ? 'checked' : ''}" onclick="corrigirPresencaManual('${j.id}', ${!presente})">
+                <div class="item-content">
+                    <div class="player-info">
+                        <div class="player-name">${j.nome}</div>
+                        <div class="player-stars"><span class="star-count">${presente ? 'Presente' : 'Ausente'}</span></div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+window.corrigirPresencaManual = function(jogadorId, presente) {
+    if (papelNoGrupo !== 'admin' || !database || !grupoAtualId) return;
+    if (presente) {
+        database.ref(`grupos/${grupoAtualId}/presencaAtual/${jogadorId}`).set(true);
+    } else {
+        database.ref(`grupos/${grupoAtualId}/presencaAtual/${jogadorId}`).remove();
+    }
+};

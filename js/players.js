@@ -262,12 +262,15 @@ window.limparPesquisa = function() {
 // ---------- Presença ----------
 
 window.togglePresenca = function(id) {
+    if (presencaTravada) return;
+    if (papelNoGrupo !== 'admin' && jogadores[id]?.userId !== usuarioAtual.uid) return;
     const jaPresente = jogadoresPresentes.includes(id);
     marcarPresencaDB(id, !jaPresente);
     if (!jaPresente && navigator.vibrate) navigator.vibrate(30);
 };
 
 window.marcarTodosMensalistas = function() {
+    if (papelNoGrupo !== 'admin' || presencaTravada) return;
     const ids = Object.values(jogadores)
         .filter(j => (j.tipo || 'mensalista') === 'mensalista')
         .map(j => j.id)
@@ -277,6 +280,7 @@ window.marcarTodosMensalistas = function() {
 };
 
 window.marcarTodosAvulsos = function() {
+    if (papelNoGrupo !== 'admin' || presencaTravada) return;
     const ids = Object.values(jogadores)
         .filter(j => j.tipo === 'avulso')
         .map(j => j.id)
@@ -286,6 +290,7 @@ window.marcarTodosAvulsos = function() {
 };
 
 window.limparTodosCheckbox = function() {
+    if (papelNoGrupo !== 'admin') return;
     limparPresencaDB();
     if (navigator.vibrate) navigator.vibrate(50);
     document.getElementById('teamsContainer').style.display = 'none';
