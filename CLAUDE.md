@@ -18,6 +18,14 @@ descreve o comportamento esperado, mas ele não foi construído.
 **Bloqueia qualquer lançamento real além do grupo de teste atual.** Precisa virar seu
 próprio plano de implementação antes disso.
 
+**Nota adicional:** quando isso for implementado, as regras de segurança do Firebase
+também precisam cobrir os caminhos `grupos/{grupoId}/presencaAtual/{jogadorId}` e
+`grupos/{grupoId}/presencaTravada` (adicionados para sincronizar presença em tempo real —
+ver spec `2026-04-24`, seção 3): write em `presencaAtual/{jogadorId}` só deveria ser
+permitido para o próprio `jogadorId` vinculado (`auth.uid === jogador.userId`) ou para o
+admin do grupo; hoje isso só é aplicado no cliente (guard em JS), não no servidor —
+mesmo problema já documentado acima para o resto do app.
+
 ---
 
 ## O que é o projeto
