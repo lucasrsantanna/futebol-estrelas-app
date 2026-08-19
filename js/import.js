@@ -99,7 +99,7 @@ window.confirmarImportacao = function() {
         }
     });
 
-    marcarVariosPresencaDB(idsParaMarcar);
+    if (!presencaTravada) marcarVariosPresencaDB(idsParaMarcar);
     fecharImportModal();
 };
 

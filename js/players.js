@@ -61,7 +61,7 @@ window.cadastrarRapido = function() {
     const novo = { id: Date.now().toString(), nome, estrelas: 5, tipo, criadoEm: new Date().toISOString() };
     salvarJogador(novo);
 
-    if (jaSelecionar) {
+    if (jaSelecionar && !presencaTravada) {
         marcarPresencaDB(novo.id, true);
     }
 

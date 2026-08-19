@@ -167,4 +167,46 @@ test.describe('Importação de lista WhatsApp', () => {
         console.log('✅ Escape fechou o modal');
     });
 
+    test('7. Presença travada bloqueia o marcar-presente da importação (jogadores ainda são criados)', async ({ page }) => {
+        await loginEAguardarApp(page);
+        await page.waitForFunction(() => jogadoresCarregados === true, { timeout: 10000 });
+
+        await page.evaluate(() => { presencaTravada = true; });
+
+        const sufixo = Date.now();
+        const listaUnica = `Mensalistas\n1 - Zqximportum ${sufixo}\n\nAvulsos\n2 - Zqximportdois ${sufixo}`;
+
+        await page.click('button.importar');
+        await page.locator('#importModal').waitFor({ state: 'visible' });
+        await page.fill('#importTextarea', listaUnica);
+        await page.click('button[onclick="processarListaWhatsApp()"]');
+        await page.locator('#importStep2').waitFor({ state: 'visible', timeout: 5000 });
+
+        await page.click('#btnConfirmarImport');
+        await page.locator('#importModal').waitFor({ state: 'hidden', timeout: 10000 });
+
+        // Os jogadores devem ser criados normalmente — só o marcar-presente é bloqueado
+        const criados = await page.evaluate(async (sufixo) => {
+            await new Promise(r => setTimeout(r, 800));
+            return Object.values(jogadores).filter(j => j.nome.includes(String(sufixo)));
+        }, sufixo);
+        expect(criados.length).toBe(2);
+        console.log(`✅ ${criados.length} jogadores criados mesmo com presença travada`);
+
+        // Nenhum deles deve ter sido marcado presente no Firebase
+        for (const j of criados) {
+            const presente = await page.evaluate(async (id) => {
+                const snap = await database.ref(`grupos/${grupoAtualId}/presencaAtual/${id}`).get();
+                return snap.val();
+            }, j.id);
+            expect(presente).toBeFalsy();
+        }
+        console.log('✅ Trava impediu o marcar-presente da importação');
+
+        await page.evaluate(() => { presencaTravada = false; });
+        await page.evaluate((ids) => {
+            ids.forEach(id => database.ref(`grupos/${grupoAtualId}/jogadores/${id}`).remove());
+        }, criados.map(j => j.id));
+    });
+
 });

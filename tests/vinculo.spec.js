@@ -359,4 +359,31 @@ test.describe('Presença — autocheckin com trava pós-confirmação', () => {
 
         await page.evaluate(() => { papelNoGrupo = 'admin'; atualizarMenuPorPapel(); });
     });
+
+    test('presença travada bloqueia o auto-mark do cadastro rápido (FAB)', async ({ page }) => {
+        await page.evaluate(() => { presencaTravada = true; });
+
+        await page.click('button.fab-button');
+        await page.locator('#quickAddModal').waitFor({ state: 'visible' });
+
+        const nome = `Zqxfab${Date.now()}`;
+        await page.fill('#quickNome', nome);
+        // quickJaSelecionar vem marcado por padrão
+        await page.click('button[onclick="cadastrarRapido()"]');
+        await page.waitForTimeout(1200);
+
+        const jogador = await page.evaluate((nomeBuscado) =>
+            Object.values(jogadores).find(j => j.nome === nomeBuscado)
+        , nome);
+        expect(jogador).toBeTruthy(); // jogador é criado normalmente, mesmo travado
+
+        const presenteNoFirebase = await page.evaluate(async (id) => {
+            const snap = await database.ref(`grupos/${grupoAtualId}/presencaAtual/${id}`).get();
+            return snap.val();
+        }, jogador.id);
+        expect(presenteNoFirebase).toBeFalsy(); // trava impede o auto-mark, mesmo com "já marcar como presente" ligado
+
+        await page.evaluate(() => { presencaTravada = false; });
+        await page.evaluate((id) => database.ref(`grupos/${grupoAtualId}/jogadores/${id}`).remove(), jogador.id);
+    });
 });
