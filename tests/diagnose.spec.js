@@ -53,7 +53,7 @@ test('diagnóstico completo do app', async ({ page }) => {
 
     // Funções globais
     const fns = [
-        'initAuth', 'loginComGoogle', 'loginComEmail', 'loginComTelefone',
+        'initAuth', 'loginComGoogle', 'loginComEmail',
         'logout', 'criarGrupo', 'entrarPorLinkConvite', 'gerarLinkConvite',
         'migrarDadosParaGrupo', 'separarTimes', 'confirmarTimes',
         'abrirImportModal', 'confirmarImportacao', 'verificarConviteNaURL',
