@@ -189,21 +189,23 @@ test.describe('Gestão do Grupo — correção manual de vínculo', () => {
             return j.id;
         });
 
-        await page.evaluate(() => document.querySelector('button.menu-btn').click());
-        await page.waitForTimeout(400);
-        await page.evaluate(() => document.querySelector("button[onclick=\"showSection('gestao')\"]").click());
-        await page.waitForSelector('#gestao.active', { timeout: 10000 });
+        try {
+            await page.evaluate(() => document.querySelector('button.menu-btn').click());
+            await page.waitForTimeout(400);
+            await page.evaluate(() => document.querySelector("button[onclick=\"showSection('gestao')\"]").click());
+            await page.waitForSelector('#gestao.active', { timeout: 10000 });
 
-        await expect(page.locator('#listaVinculos')).toContainText('Vínculo Teste');
+            await expect(page.locator('#listaVinculos')).toContainText('Vínculo Teste');
 
-        await page.evaluate((id) => window.corrigirVinculoJogador(id, ''), jogadorId);
-        const userIdDepois = await page.evaluate(async (id) => {
-            const snap = await database.ref(`grupos/${grupoAtualId}/jogadores/${id}/userId`).get();
-            return snap.val();
-        }, jogadorId);
-        expect(userIdDepois).toBeNull();
-
-        await page.evaluate((id) => database.ref(`grupos/${grupoAtualId}/jogadores/${id}`).remove(), jogadorId);
+            await page.evaluate((id) => window.corrigirVinculoJogador(id, ''), jogadorId);
+            const userIdDepois = await page.evaluate(async (id) => {
+                const snap = await database.ref(`grupos/${grupoAtualId}/jogadores/${id}/userId`).get();
+                return snap.val();
+            }, jogadorId);
+            expect(userIdDepois).toBeNull();
+        } finally {
+            await page.evaluate((id) => database.ref(`grupos/${grupoAtualId}/jogadores/${id}`).remove(), jogadorId);
+        }
     });
 });
 
@@ -219,23 +221,25 @@ test.describe('Presença sincronizada via Firebase', () => {
             return j.id;
         });
 
-        await page.evaluate((id) => togglePresenca(id), jogadorId);
-        await page.waitForTimeout(500);
-        let val = await page.evaluate(async (id) => {
-            const snap = await database.ref(`grupos/${grupoAtualId}/presencaAtual/${id}`).get();
-            return snap.val();
-        }, jogadorId);
-        expect(val).toBe(true);
+        try {
+            await page.evaluate((id) => togglePresenca(id), jogadorId);
+            await page.waitForTimeout(500);
+            let val = await page.evaluate(async (id) => {
+                const snap = await database.ref(`grupos/${grupoAtualId}/presencaAtual/${id}`).get();
+                return snap.val();
+            }, jogadorId);
+            expect(val).toBe(true);
 
-        await page.evaluate((id) => togglePresenca(id), jogadorId);
-        await page.waitForTimeout(500);
-        val = await page.evaluate(async (id) => {
-            const snap = await database.ref(`grupos/${grupoAtualId}/presencaAtual/${id}`).get();
-            return snap.val();
-        }, jogadorId);
-        expect(val).toBeFalsy(); // ausente ou null — RTDB não guarda chave com valor null
-
-        await page.evaluate((id) => database.ref(`grupos/${grupoAtualId}/jogadores/${id}`).remove(), jogadorId);
+            await page.evaluate((id) => togglePresenca(id), jogadorId);
+            await page.waitForTimeout(500);
+            val = await page.evaluate(async (id) => {
+                const snap = await database.ref(`grupos/${grupoAtualId}/presencaAtual/${id}`).get();
+                return snap.val();
+            }, jogadorId);
+            expect(val).toBeFalsy(); // ausente ou null — RTDB não guarda chave com valor null
+        } finally {
+            await page.evaluate((id) => database.ref(`grupos/${grupoAtualId}/jogadores/${id}`).remove(), jogadorId);
+        }
     });
 });
 
@@ -313,27 +317,29 @@ test.describe('Presença — autocheckin com trava pós-confirmação', () => {
             return { meuId: meu.id, outroId: outro.id };
         });
 
-        await page.evaluate(() => { papelNoGrupo = 'membro'; });
+        try {
+            await page.evaluate(() => { papelNoGrupo = 'membro'; });
 
-        await page.evaluate((id) => togglePresenca(id), outroId);
-        let presente = await page.evaluate((id) => jogadoresPresentes.includes(id), outroId);
-        expect(presente).toBe(false); // membro não conseguiu marcar o jogador de outra pessoa
+            await page.evaluate((id) => togglePresenca(id), outroId);
+            let presente = await page.evaluate((id) => jogadoresPresentes.includes(id), outroId);
+            expect(presente).toBe(false); // membro não conseguiu marcar o jogador de outra pessoa
 
-        await page.evaluate((id) => togglePresenca(id), meuId);
-        presente = await page.evaluate((id) => jogadoresPresentes.includes(id), meuId);
-        expect(presente).toBe(true); // membro conseguiu marcar o próprio jogador
+            await page.evaluate((id) => togglePresenca(id), meuId);
+            presente = await page.evaluate((id) => jogadoresPresentes.includes(id), meuId);
+            expect(presente).toBe(true); // membro conseguiu marcar o próprio jogador
 
-        await page.evaluate(() => { papelNoGrupo = 'admin'; });
-        await page.evaluate((id) => togglePresenca(id), outroId);
-        presente = await page.evaluate((id) => jogadoresPresentes.includes(id), outroId);
-        expect(presente).toBe(true); // admin marca qualquer jogador
-
-        await page.evaluate(({ meuId, outroId }) => {
-            database.ref(`grupos/${grupoAtualId}/jogadores/${meuId}`).remove();
-            database.ref(`grupos/${grupoAtualId}/jogadores/${outroId}`).remove();
-            database.ref(`grupos/${grupoAtualId}/presencaAtual/${meuId}`).remove();
-            database.ref(`grupos/${grupoAtualId}/presencaAtual/${outroId}`).remove();
-        }, { meuId, outroId });
+            await page.evaluate(() => { papelNoGrupo = 'admin'; });
+            await page.evaluate((id) => togglePresenca(id), outroId);
+            presente = await page.evaluate((id) => jogadoresPresentes.includes(id), outroId);
+            expect(presente).toBe(true); // admin marca qualquer jogador
+        } finally {
+            await page.evaluate(({ meuId, outroId }) => {
+                database.ref(`grupos/${grupoAtualId}/jogadores/${meuId}`).remove();
+                database.ref(`grupos/${grupoAtualId}/jogadores/${outroId}`).remove();
+                database.ref(`grupos/${grupoAtualId}/presencaAtual/${meuId}`).remove();
+                database.ref(`grupos/${grupoAtualId}/presencaAtual/${outroId}`).remove();
+            }, { meuId, outroId });
+        }
     });
 
     test('presença travada bloqueia todo mundo, exceto correção manual do admin', async ({ page }) => {
@@ -342,25 +348,27 @@ test.describe('Presença — autocheckin com trava pós-confirmação', () => {
             return j.id;
         });
 
-        await page.evaluate(() => { papelNoGrupo = 'admin'; presencaTravada = true; });
+        try {
+            await page.evaluate(() => { papelNoGrupo = 'admin'; presencaTravada = true; });
 
-        await page.evaluate((id) => togglePresenca(id), jogadorId);
-        let presente = await page.evaluate((id) => jogadoresPresentes.includes(id), jogadorId);
-        expect(presente).toBe(false); // trava bloqueia até o admin pelo fluxo normal
+            await page.evaluate((id) => togglePresenca(id), jogadorId);
+            let presente = await page.evaluate((id) => jogadoresPresentes.includes(id), jogadorId);
+            expect(presente).toBe(false); // trava bloqueia até o admin pelo fluxo normal
 
-        await page.evaluate((id) => corrigirPresencaManual(id, true), jogadorId);
-        await page.waitForTimeout(500);
-        const val = await page.evaluate(async (id) => {
-            const snap = await database.ref(`grupos/${grupoAtualId}/presencaAtual/${id}`).get();
-            return snap.val();
-        }, jogadorId);
-        expect(val).toBe(true); // correção manual ignora a trava
-
-        await page.evaluate(() => { presencaTravada = false; });
-        await page.evaluate((id) => {
-            database.ref(`grupos/${grupoAtualId}/jogadores/${id}`).remove();
-            database.ref(`grupos/${grupoAtualId}/presencaAtual/${id}`).remove();
-        }, jogadorId);
+            await page.evaluate((id) => corrigirPresencaManual(id, true), jogadorId);
+            await page.waitForTimeout(500);
+            const val = await page.evaluate(async (id) => {
+                const snap = await database.ref(`grupos/${grupoAtualId}/presencaAtual/${id}`).get();
+                return snap.val();
+            }, jogadorId);
+            expect(val).toBe(true); // correção manual ignora a trava
+        } finally {
+            await page.evaluate(() => { presencaTravada = false; });
+            await page.evaluate((id) => {
+                database.ref(`grupos/${grupoAtualId}/jogadores/${id}`).remove();
+                database.ref(`grupos/${grupoAtualId}/presencaAtual/${id}`).remove();
+            }, jogadorId);
+        }
     });
 
     test('botão Limpar some para membro', async ({ page }) => {
@@ -375,27 +383,32 @@ test.describe('Presença — autocheckin com trava pós-confirmação', () => {
     test('presença travada bloqueia o auto-mark do cadastro rápido (FAB)', async ({ page }) => {
         await page.evaluate(() => { presencaTravada = true; });
 
-        await page.click('button.fab-button');
-        await page.locator('#quickAddModal').waitFor({ state: 'visible' });
+        let jogador;
+        try {
+            await page.click('button.fab-button');
+            await page.locator('#quickAddModal').waitFor({ state: 'visible' });
 
-        const nome = `Zqxfab${Date.now()}`;
-        await page.fill('#quickNome', nome);
-        // quickJaSelecionar vem marcado por padrão
-        await page.click('button[onclick="cadastrarRapido()"]');
-        await page.waitForTimeout(1200);
+            const nome = `Zqxfab${Date.now()}`;
+            await page.fill('#quickNome', nome);
+            // quickJaSelecionar vem marcado por padrão
+            await page.click('button[onclick="cadastrarRapido()"]');
+            await page.waitForTimeout(1200);
 
-        const jogador = await page.evaluate((nomeBuscado) =>
-            Object.values(jogadores).find(j => j.nome === nomeBuscado)
-        , nome);
-        expect(jogador).toBeTruthy(); // jogador é criado normalmente, mesmo travado
+            jogador = await page.evaluate((nomeBuscado) =>
+                Object.values(jogadores).find(j => j.nome === nomeBuscado)
+            , nome);
+            expect(jogador).toBeTruthy(); // jogador é criado normalmente, mesmo travado
 
-        const presenteNoFirebase = await page.evaluate(async (id) => {
-            const snap = await database.ref(`grupos/${grupoAtualId}/presencaAtual/${id}`).get();
-            return snap.val();
-        }, jogador.id);
-        expect(presenteNoFirebase).toBeFalsy(); // trava impede o auto-mark, mesmo com "já marcar como presente" ligado
-
-        await page.evaluate(() => { presencaTravada = false; });
-        await page.evaluate((id) => database.ref(`grupos/${grupoAtualId}/jogadores/${id}`).remove(), jogador.id);
+            const presenteNoFirebase = await page.evaluate(async (id) => {
+                const snap = await database.ref(`grupos/${grupoAtualId}/presencaAtual/${id}`).get();
+                return snap.val();
+            }, jogador.id);
+            expect(presenteNoFirebase).toBeFalsy(); // trava impede o auto-mark, mesmo com "já marcar como presente" ligado
+        } finally {
+            await page.evaluate(() => { presencaTravada = false; });
+            if (jogador) {
+                await page.evaluate((id) => database.ref(`grupos/${grupoAtualId}/jogadores/${id}`).remove(), jogador.id);
+            }
+        }
     });
 });

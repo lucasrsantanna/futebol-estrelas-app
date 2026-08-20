@@ -100,4 +100,7 @@ function atualizarMenuPorPapel() {
 
     const btnLimpar = document.getElementById('btnLimparPresenca');
     if (btnLimpar) btnLimpar.style.display = papelNoGrupo === 'admin' ? 'flex' : 'none';
+
+    const btnMensalistas = document.getElementById('btnMarcarMensalistas');
+    if (btnMensalistas) btnMensalistas.style.display = papelNoGrupo === 'admin' ? 'flex' : 'none';
 }

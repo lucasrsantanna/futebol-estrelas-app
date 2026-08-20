@@ -167,6 +167,9 @@ window.atualizarOrdenacaoJogadores = function() { exibirJogadores(); };
 function exibirJogadoresPresentes() {
     const container = document.getElementById('jogadoresPresentes');
 
+    const aviso = document.getElementById('presencaTravadaAviso');
+    if (aviso) aviso.style.display = presencaTravada ? 'block' : 'none';
+
     if (Object.keys(jogadores).length === 0) {
         container.innerHTML = `<div class="empty-state"><span class="emoji">😅</span>Nenhum jogador cadastrado ainda.<br>Cadastre jogadores primeiro para poder separá-los em times.</div>`;
         return;
@@ -263,7 +266,7 @@ window.limparPesquisa = function() {
 
 window.togglePresenca = function(id) {
     if (presencaTravada) return;
-    if (papelNoGrupo !== 'admin' && jogadores[id]?.userId !== usuarioAtual.uid) return;
+    if (papelNoGrupo !== 'admin' && jogadores[id]?.userId !== usuarioAtual?.uid) return;
     const jaPresente = jogadoresPresentes.includes(id);
     marcarPresencaDB(id, !jaPresente);
     if (!jaPresente && navigator.vibrate) navigator.vibrate(30);

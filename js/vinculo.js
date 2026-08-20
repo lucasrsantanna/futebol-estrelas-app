@@ -13,23 +13,28 @@ async function criarJogadorVinculado(grupoId, userId, nome) {
 }
 
 async function resolverVinculoJogador(grupoId) {
-    const snap = await database.ref(`grupos/${grupoId}/jogadores`).get();
-    const todos = snap.val() || {};
+    try {
+        const snap = await database.ref(`grupos/${grupoId}/jogadores`).get();
+        const todos = snap.val() || {};
 
-    const jaTemJogador = Object.values(todos).some(j => j.userId === usuarioAtual.uid);
-    if (jaTemJogador) { _finalizarEntradaNoGrupo(grupoId); return; }
+        const jaTemJogador = Object.values(todos).some(j => j.userId === usuarioAtual.uid);
+        if (jaTemJogador) { _finalizarEntradaNoGrupo(grupoId); return; }
 
-    const orfaos = Object.entries(todos)
-        .filter(([, j]) => !j.userId)
-        .map(([id, j]) => ({ ...j, id }));
+        const orfaos = Object.entries(todos)
+            .filter(([, j]) => !j.userId)
+            .map(([id, j]) => ({ ...j, id }));
 
-    if (orfaos.length === 0) {
-        await criarJogadorVinculado(grupoId, usuarioAtual.uid, usuarioAtual.displayName || usuarioAtual.email || 'Jogador');
+        if (orfaos.length === 0) {
+            await criarJogadorVinculado(grupoId, usuarioAtual.uid, usuarioAtual.displayName || usuarioAtual.email || 'Jogador');
+            _finalizarEntradaNoGrupo(grupoId);
+            return;
+        }
+
+        mostrarTelaAutoclaim(grupoId, orfaos);
+    } catch (error) {
+        console.error('Erro ao resolver vínculo do jogador:', error);
         _finalizarEntradaNoGrupo(grupoId);
-        return;
     }
-
-    mostrarTelaAutoclaim(grupoId, orfaos);
 }
 
 function _finalizarEntradaNoGrupo(grupoId) {
@@ -114,6 +119,7 @@ async function exibirVinculosJogadores() {
 }
 
 window.corrigirVinculoJogador = async function(jogadorId, novoUserId) {
+    if (papelNoGrupo !== 'admin') return;
     await database.ref(`grupos/${grupoAtualId}/jogadores/${jogadorId}/userId`).set(novoUserId || null);
     exibirVinculosJogadores();
 };

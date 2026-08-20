@@ -59,6 +59,7 @@ function inicializarListeners(grupoId) {
 
     database.ref(`grupos/${grupoId}/presencaTravada`).on('value', (snapshot) => {
         presencaTravada = snapshot.val() === true;
+        if (document.querySelector('.content-section.active')?.id === 'separar') exibirJogadoresPresentes();
     });
 
     database.ref('.info/connected').on('value', (snapshot) => {
