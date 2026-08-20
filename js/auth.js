@@ -163,44 +163,6 @@ window.cadastrarComEmail = async function() {
     }
 };
 
-window.loginComTelefone = async function() {
-    _limparErroLogin();
-    const telefone = document.getElementById('loginTelefone').value.trim();
-    if (!telefone) {
-        _mostrarErroLogin('Digite o número de telefone.');
-        return;
-    }
-
-    try {
-        if (!window._recaptchaVerifier) {
-            window._recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptchaContainer', {
-                size: 'invisible'
-            });
-        }
-        window._confirmacaoSMS = await auth.signInWithPhoneNumber(telefone, window._recaptchaVerifier);
-        document.getElementById('loginTelefoneStep1').style.display = 'none';
-        document.getElementById('loginTelefoneStep2').style.display = 'block';
-    } catch (err) {
-        _mostrarErroLogin('Erro ao enviar SMS. Verifique o número e tente novamente.');
-        console.error(err);
-    }
-};
-
-window.confirmarCodigoSMS = async function() {
-    _limparErroLogin();
-    const codigo = document.getElementById('loginSMSCodigo').value.trim();
-    if (!codigo) {
-        _mostrarErroLogin('Digite o código recebido por SMS.');
-        return;
-    }
-    try {
-        await window._confirmacaoSMS.confirm(codigo);
-    } catch (err) {
-        _mostrarErroLogin('Código inválido. Tente novamente.');
-        console.error(err);
-    }
-};
-
 window.logout = async function() {
     desligarListeners(grupoAtualId);
     grupoAtualId   = null;
@@ -219,21 +181,11 @@ window.logout = async function() {
 window.mostrarLoginEmail = function() {
     document.getElementById('loginOpcoes').style.display       = 'none';
     document.getElementById('loginEmailForm').style.display    = 'block';
-    document.getElementById('loginTelefoneForm').style.display = 'none';
-};
-
-window.mostrarLoginTelefone = function() {
-    document.getElementById('loginOpcoes').style.display       = 'none';
-    document.getElementById('loginEmailForm').style.display    = 'none';
-    document.getElementById('loginTelefoneForm').style.display = 'block';
 };
 
 window.voltarLoginOpcoes = function() {
     document.getElementById('loginOpcoes').style.display       = 'flex';
     document.getElementById('loginEmailForm').style.display    = 'none';
-    document.getElementById('loginTelefoneForm').style.display = 'none';
-    document.getElementById('loginTelefoneStep1').style.display = 'block';
-    document.getElementById('loginTelefoneStep2').style.display = 'none';
     _limparErroLogin();
 };
 

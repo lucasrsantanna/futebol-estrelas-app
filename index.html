@@ -41,9 +41,6 @@
                 <button class="btn btn-login-outline" onclick="mostrarLoginEmail()">
                     ✉️ Entrar com E-mail
                 </button>
-                <button class="btn btn-login-outline" onclick="mostrarLoginTelefone()">
-                    📱 Entrar com Telefone
-                </button>
             </div>
 
             <!-- Form de e-mail -->
@@ -54,21 +51,6 @@
                     <button class="btn btn-full" onclick="loginComEmail()">Entrar</button>
                     <button class="btn btn-full" onclick="cadastrarComEmail()" style="background: #666;">Cadastrar</button>
                 </div>
-                <button class="login-voltar-btn" onclick="voltarLoginOpcoes()">← Voltar</button>
-            </div>
-
-            <!-- Form de telefone -->
-            <div id="loginTelefoneForm" style="display: none; width: 100%;">
-                <div id="loginTelefoneStep1">
-                    <input type="tel" id="loginTelefone" placeholder="+55 11 99999-9999" class="login-input">
-                    <button class="btn btn-full" onclick="loginComTelefone()">Enviar SMS</button>
-                </div>
-                <div id="loginTelefoneStep2" style="display: none;">
-                    <p style="color: #666; font-size: 14px; margin-bottom: 10px;">Digite o código recebido por SMS:</p>
-                    <input type="text" id="loginSMSCodigo" placeholder="Código de 6 dígitos" class="login-input" maxlength="6">
-                    <button class="btn btn-full" onclick="confirmarCodigoSMS()">Confirmar</button>
-                </div>
-                <div id="recaptchaContainer"></div>
                 <button class="login-voltar-btn" onclick="voltarLoginOpcoes()">← Voltar</button>
             </div>
         </div>

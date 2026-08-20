@@ -65,7 +65,7 @@ test('funções globais críticas existem no window', async ({ page }) => {
     await page.waitForLoadState('networkidle');
 
     const fns = [
-        'initAuth', 'loginComGoogle', 'loginComEmail', 'loginComTelefone',
+        'initAuth', 'loginComGoogle', 'loginComEmail',
         'logout', 'criarGrupo', 'entrarPorLinkConvite', 'gerarLinkConvite',
         'migrarDadosParaGrupo', 'separarTimes', 'confirmarTimes',
         'abrirImportModal', 'confirmarImportacao',

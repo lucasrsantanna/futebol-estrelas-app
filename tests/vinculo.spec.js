@@ -15,6 +15,18 @@ async function fazerLogin(page) {
     await page.click('button[onclick="loginComEmail()"]');
 }
 
+test('login não oferece mais opção de telefone/SMS', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+    await page.locator('#telaLogin').waitFor({ state: 'visible' });
+
+    await expect(page.locator('button[onclick="mostrarLoginTelefone()"]')).toHaveCount(0);
+    await expect(page.locator('#loginTelefoneForm')).toHaveCount(0);
+
+    const existe = await page.evaluate(() => typeof window.loginComTelefone !== 'undefined');
+    expect(existe).toBe(false);
+});
+
 test.describe('Migração — vínculo de conta', () => {
 
     test('_comUserIdNulo adiciona userId: null a cada jogador', async ({ page }) => {
