@@ -41,9 +41,6 @@
                 <button class="btn btn-login-outline" onclick="mostrarLoginEmail()">
                     ✉️ Entrar com E-mail
                 </button>
-                <button class="btn btn-login-outline" onclick="mostrarLoginTelefone()">
-                    📱 Entrar com Telefone
-                </button>
             </div>
 
             <!-- Form de e-mail -->
@@ -54,21 +51,6 @@
                     <button class="btn btn-full" onclick="loginComEmail()">Entrar</button>
                     <button class="btn btn-full" onclick="cadastrarComEmail()" style="background: #666;">Cadastrar</button>
                 </div>
-                <button class="login-voltar-btn" onclick="voltarLoginOpcoes()">← Voltar</button>
-            </div>
-
-            <!-- Form de telefone -->
-            <div id="loginTelefoneForm" style="display: none; width: 100%;">
-                <div id="loginTelefoneStep1">
-                    <input type="tel" id="loginTelefone" placeholder="+55 11 99999-9999" class="login-input">
-                    <button class="btn btn-full" onclick="loginComTelefone()">Enviar SMS</button>
-                </div>
-                <div id="loginTelefoneStep2" style="display: none;">
-                    <p style="color: #666; font-size: 14px; margin-bottom: 10px;">Digite o código recebido por SMS:</p>
-                    <input type="text" id="loginSMSCodigo" placeholder="Código de 6 dígitos" class="login-input" maxlength="6">
-                    <button class="btn btn-full" onclick="confirmarCodigoSMS()">Confirmar</button>
-                </div>
-                <div id="recaptchaContainer"></div>
                 <button class="login-voltar-btn" onclick="voltarLoginOpcoes()">← Voltar</button>
             </div>
         </div>
@@ -111,6 +93,22 @@
         </div>
     </div>
 
+    <!-- TELA AUTOCLAIM (vincular jogador existente) -->
+    <div id="telaAutoclaim" style="display: none;">
+        <div class="login-container">
+            <div class="login-logo">🤔</div>
+            <h1 class="login-titulo">É você?</h1>
+            <p class="login-subtitulo">Esse grupo tem jogadores sem conta vinculada. Você é um deles?</p>
+
+            <div id="autoclaimLista" style="width:100%;max-height:280px;overflow-y:auto;"></div>
+
+            <div style="display: flex; flex-direction: column; gap: 12px; width: 100%; margin-top: 12px;">
+                <button class="btn btn-full" onclick="criarComoNovoJogador()" style="background: #666;">Sou novo, não estou nessa lista</button>
+                <button class="login-voltar-btn" onclick="pularAutoclaim()">Agora não</button>
+            </div>
+        </div>
+    </div>
+
     <div class="sync-status" id="syncStatus" style="display: none;">🟢 Sincronizado</div>
 
     <div class="container" id="mainApp" style="display: none;">
@@ -144,6 +142,9 @@
                 </button>
                 <button class="menu-item" onclick="showSection('cadastro')">
                     <span class="menu-icon">➕</span><span>Cadastrar Jogador</span>
+                </button>
+                <button class="menu-item" id="menuGestao" onclick="showSection('gestao')" style="display:none;">
+                    <span class="menu-icon">⚙️</span><span>Gestão do Grupo</span>
                 </button>
             </div>
             <div style="padding: 15px; border-top: 1px solid #e0e0e0; margin-top: auto; display: flex; flex-direction: column; gap: 10px;">
@@ -187,11 +188,13 @@
                         <div class="selected-counter"><span id="totalSelecionados">0</span></div>
                     </div>
                     <div class="quick-actions">
-                        <button class="quick-action-btn mensalistas" onclick="marcarTodosMensalistas()">✓ Mensalistas</button>
+                        <button class="quick-action-btn mensalistas" id="btnMarcarMensalistas" onclick="marcarTodosMensalistas()">✓ Mensalistas</button>
                         <button class="quick-action-btn importar" onclick="abrirImportModal()">📋 Importar</button>
-                        <button class="quick-action-btn limpar" onclick="limparTodosCheckbox()">✕ Limpar</button>
+                        <button class="quick-action-btn limpar" id="btnLimparPresenca" onclick="limparTodosCheckbox()">✕ Limpar</button>
                     </div>
                 </div>
+
+                <p id="presencaTravadaAviso" style="display:none; background:#fff3e0; color:#e65100; padding:10px 14px; border-radius:8px; margin-bottom:12px; font-size:14px;">🔒 Presença travada — times já confirmados. Fale com o admin se precisar corrigir.</p>
 
                 <div id="jogadoresPresentes"></div>
 
@@ -221,16 +224,6 @@
                     <div class="form-group">
                         <label for="quickNome">Nome do Jogador:</label>
                         <input type="text" id="quickNome" placeholder="Digite o nome">
-                    </div>
-                    <div class="form-group">
-                        <label for="quickEstrelas">Nível de Habilidade:</label>
-                        <select id="quickEstrelas">
-                            <option value="1">⭐ 1</option><option value="2">⭐⭐ 2</option>
-                            <option value="3">⭐⭐⭐ 3</option><option value="4">⭐⭐⭐⭐ 4</option>
-                            <option value="5" selected>⭐⭐⭐⭐⭐ 5</option><option value="6">⭐⭐⭐⭐⭐⭐ 6</option>
-                            <option value="7">⭐⭐⭐⭐⭐⭐⭐ 7</option><option value="8">⭐⭐⭐⭐⭐⭐⭐⭐ 8</option>
-                            <option value="9">⭐⭐⭐⭐⭐⭐⭐⭐⭐ 9</option><option value="10">⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐ 10</option>
-                        </select>
                     </div>
                     <div class="form-group">
                         <label for="quickTipo">Tipo:</label>
@@ -304,16 +297,6 @@
                     <input type="text" id="nomeJogador" placeholder="Digite o nome do jogador">
                 </div>
                 <div class="form-group">
-                    <label for="estrelas">Nível de Habilidade:</label>
-                    <select id="estrelas">
-                        <option value="1">⭐ 1 Estrela</option><option value="2">⭐⭐ 2 Estrelas</option>
-                        <option value="3">⭐⭐⭐ 3 Estrelas</option><option value="4">⭐⭐⭐⭐ 4 Estrelas</option>
-                        <option value="5">⭐⭐⭐⭐⭐ 5 Estrelas</option><option value="6">⭐⭐⭐⭐⭐⭐ 6 Estrelas</option>
-                        <option value="7">⭐⭐⭐⭐⭐⭐⭐ 7 Estrelas</option><option value="8">⭐⭐⭐⭐⭐⭐⭐⭐ 8 Estrelas</option>
-                        <option value="9">⭐⭐⭐⭐⭐⭐⭐⭐⭐ 9 Estrelas</option><option value="10">⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐ 10 Estrelas</option>
-                    </select>
-                </div>
-                <div class="form-group">
                     <label for="tipoJogador">Tipo de Jogador:</label>
                     <select id="tipoJogador">
                         <option value="mensalista">Mensalista</option>
@@ -321,6 +304,23 @@
                     </select>
                 </div>
                 <button class="btn btn-full" id="btnCadastrar" onclick="cadastrarJogador()">➕ Cadastrar Jogador</button>
+            </div>
+
+            <!-- GESTÃO DO GRUPO (admin) -->
+            <div id="gestao" class="content-section">
+                <h2>⚙️ Gestão do Grupo</h2>
+
+                <div class="form-group">
+                    <label>Vínculos de Jogadores</label>
+                    <p style="color:#666;font-size:13px;margin-bottom:10px;">Corrija manualmente qual conta está vinculada a cada jogador — use se alguém reivindicou o jogador errado na tela de "É você?".</p>
+                    <div id="listaVinculos"></div>
+                </div>
+
+                <div class="form-group">
+                    <label>Correção Manual de Presença</label>
+                    <p style="color:#666;font-size:13px;margin-bottom:10px;">Corrija a presença de um jogador mesmo com a rodada travada.</p>
+                    <div id="listaCorrecaoPresenca"></div>
+                </div>
             </div>
 
         </div><!-- /main-content -->
@@ -381,16 +381,6 @@
                 <div class="form-group">
                     <label for="editNome">Nome:</label>
                     <input type="text" id="editNome" readonly style="background: #f5f5f5;">
-                </div>
-                <div class="form-group">
-                    <label for="editEstrelas">Nível de Habilidade:</label>
-                    <select id="editEstrelas">
-                        <option value="1">⭐ 1 Estrela</option><option value="2">⭐⭐ 2 Estrelas</option>
-                        <option value="3">⭐⭐⭐ 3 Estrelas</option><option value="4">⭐⭐⭐⭐ 4 Estrelas</option>
-                        <option value="5">⭐⭐⭐⭐⭐ 5 Estrelas</option><option value="6">⭐⭐⭐⭐⭐⭐ 6 Estrelas</option>
-                        <option value="7">⭐⭐⭐⭐⭐⭐⭐ 7 Estrelas</option><option value="8">⭐⭐⭐⭐⭐⭐⭐⭐ 8 Estrelas</option>
-                        <option value="9">⭐⭐⭐⭐⭐⭐⭐⭐⭐ 9 Estrelas</option><option value="10">⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐ 10 Estrelas</option>
-                    </select>
                 </div>
                 <div class="form-group">
                     <label for="editTipoJogador">Tipo de Jogador:</label>
@@ -457,6 +447,7 @@
     <script src="js/history.js"></script>
     <script src="js/restrictions.js"></script>
     <script src="js/grupos.js"></script>
+    <script src="js/vinculo.js"></script>
     <script src="js/migration.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/app.js"></script>

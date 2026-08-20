@@ -98,11 +98,13 @@ Dois papéis: **admin** e **membro**.
 
 | Ação | Admin | Membro |
 |---|---|---|
-| Marcar presença (qualquer jogador da lista) | ✅ | ✅ |
-| Desfazer presença marcada | ✅ | ❌ |
+| Marcar/desmarcar a própria presença (antes do fechamento) | ✅ | ✅ |
+| Marcar/desmarcar presença de qualquer jogador (antes do fechamento) | ✅ | ❌ |
+| Marcar presença em lote ("Mensalistas"/"Avulsos") | ✅ | ❌ |
+| Corrigir presença manualmente após o fechamento (via Gestão) | ✅ | ❌ |
 | Ver times formados | ✅ | ✅ |
 | Ver próprio saldo financeiro | ✅ | ✅ |
-| Confirmar times | ✅ | ❌ |
+| Confirmar times (fecha/trava a presença da rodada) | ✅ | ❌ |
 | Redistribuir times | ✅ | ❌ |
 | Gerenciar ciclo de votação de estrelas (abrir, encerrar, aprovar resultados) | ✅ | ❌ |
 | Cadastrar jogador | ✅ | ❌ |
@@ -114,7 +116,13 @@ Dois papéis: **admin** e **membro**.
 
 Quando um membro acessa uma ação restrita, o elemento simplesmente não é exibido — sem mensagem de erro, sem botão desabilitado.
 
-Presença é sempre aditiva para o membro: ele só marca a própria presença, nunca desmarca. Desfazer uma presença marcada é exclusivo do admin.
+**Presença é sincronizada em tempo real entre dispositivos** (`grupos/{grupoId}/presencaAtual/{jogadorId}`),
+não mais local por navegador. Antes do fechamento da rodada: membro marca/desmarca só o
+próprio jogador (vinculado por `userId`); admin marca/desmarca qualquer jogador, incluindo
+em lote. Ao confirmar os times (`confirmarTimes`), a presença da rodada trava
+(`presencaTravada: true`) — a partir daí, ninguém desmarca pelo fluxo normal, nem membro
+nem admin; qualquer correção depois disso é manual, pela tela de Gestão do Grupo. O botão
+"Limpar" (admin-only) destrava e limpa a presença, abrindo a próxima rodada.
 
 ---
 

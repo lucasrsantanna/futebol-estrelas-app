@@ -6,7 +6,6 @@
 
 window.cadastrarJogador = function() {
     const nome = document.getElementById('nomeJogador').value.trim();
-    const estrelas = parseInt(document.getElementById('estrelas').value);
     const tipo = document.getElementById('tipoJogador').value;
     const btn = document.getElementById('btnCadastrar');
 
@@ -19,10 +18,9 @@ window.cadastrarJogador = function() {
     btn.disabled = true;
     btn.textContent = '⏳ Cadastrando...';
 
-    salvarJogador({ id: Date.now().toString(), nome, estrelas, tipo, criadoEm: new Date().toISOString() });
+    salvarJogador({ id: Date.now().toString(), nome, estrelas: 5, tipo, criadoEm: new Date().toISOString() });
 
     document.getElementById('nomeJogador').value = '';
-    document.getElementById('estrelas').value = '1';
     document.getElementById('tipoJogador').value = 'mensalista';
 
     setTimeout(() => {
@@ -37,7 +35,6 @@ window.cadastrarJogador = function() {
 window.abrirCadastroRapido = function() {
     document.getElementById('quickAddModal').style.display = 'flex';
     document.getElementById('quickNome').value = '';
-    document.getElementById('quickEstrelas').value = '5';
     document.getElementById('quickTipo').value = 'mensalista';
     document.getElementById('quickJaSelecionar').checked = true;
     setTimeout(() => document.getElementById('quickNome').focus(), 100);
@@ -49,7 +46,6 @@ window.fecharCadastroRapido = function() {
 
 window.cadastrarRapido = function() {
     const nome = document.getElementById('quickNome').value.trim();
-    const estrelas = parseInt(document.getElementById('quickEstrelas').value);
     const tipo = document.getElementById('quickTipo').value;
     const jaSelecionar = document.getElementById('quickJaSelecionar').checked;
     const btn = document.getElementById('btnQuickAdd');
@@ -62,12 +58,11 @@ window.cadastrarRapido = function() {
     btn.disabled = true;
     btn.textContent = '⏳ Cadastrando...';
 
-    const novo = { id: Date.now().toString(), nome, estrelas, tipo, criadoEm: new Date().toISOString() };
+    const novo = { id: Date.now().toString(), nome, estrelas: 5, tipo, criadoEm: new Date().toISOString() };
     salvarJogador(novo);
 
-    if (jaSelecionar) {
-        jogadoresPresentes.push(novo.id);
-        salvarSelecao();
+    if (jaSelecionar && !presencaTravada) {
+        marcarPresencaDB(novo.id, true);
     }
 
     setTimeout(() => {
@@ -86,7 +81,6 @@ window.editarJogador = function(id, event) {
     jogadorEditando = jogadores[id];
     if (!jogadorEditando) return;
     document.getElementById('editNome').value = jogadorEditando.nome;
-    document.getElementById('editEstrelas').value = jogadorEditando.estrelas;
     document.getElementById('editTipoJogador').value = jogadorEditando.tipo || 'mensalista';
     document.getElementById('editModal').style.display = 'flex';
 };
@@ -99,7 +93,6 @@ window.salvarEdicao = function() {
 
     salvarJogador({
         ...jogadorEditando,
-        estrelas: parseInt(document.getElementById('editEstrelas').value),
         tipo: document.getElementById('editTipoJogador').value,
         atualizadoEm: new Date().toISOString()
     });
@@ -120,7 +113,7 @@ window.removerJogador = function() {
     btn.disabled = true;
     btn.textContent = '⏳ Removendo...';
 
-    jogadoresPresentes = jogadoresPresentes.filter(id => id !== jogadorEditando.id);
+    marcarPresencaDB(jogadorEditando.id, false);
 
     // Limpar restrições do jogador removido
     Object.values(restricoes).forEach(r => {
@@ -173,6 +166,9 @@ window.atualizarOrdenacaoJogadores = function() { exibirJogadores(); };
 
 function exibirJogadoresPresentes() {
     const container = document.getElementById('jogadoresPresentes');
+
+    const aviso = document.getElementById('presencaTravadaAviso');
+    if (aviso) aviso.style.display = presencaTravada ? 'block' : 'none';
 
     if (Object.keys(jogadores).length === 0) {
         container.innerHTML = `<div class="empty-state"><span class="emoji">😅</span>Nenhum jogador cadastrado ainda.<br>Cadastre jogadores primeiro para poder separá-los em times.</div>`;
@@ -269,44 +265,41 @@ window.limparPesquisa = function() {
 // ---------- Presença ----------
 
 window.togglePresenca = function(id) {
-    const idx = jogadoresPresentes.indexOf(id);
-    if (idx > -1) {
-        jogadoresPresentes.splice(idx, 1);
-    } else {
-        jogadoresPresentes.push(id);
-        if (navigator.vibrate) navigator.vibrate(30);
-    }
-    salvarSelecao();
-    exibirJogadoresPresentes();
+    if (presencaTravada) return;
+    if (papelNoGrupo !== 'admin' && jogadores[id]?.userId !== usuarioAtual?.uid) return;
+    const jaPresente = jogadoresPresentes.includes(id);
+    marcarPresencaDB(id, !jaPresente);
+    if (!jaPresente && navigator.vibrate) navigator.vibrate(30);
 };
 
 window.marcarTodosMensalistas = function() {
-    Object.values(jogadores)
+    if (papelNoGrupo !== 'admin' || presencaTravada) return;
+    const ids = Object.values(jogadores)
         .filter(j => (j.tipo || 'mensalista') === 'mensalista')
-        .forEach(j => { if (!jogadoresPresentes.includes(j.id)) jogadoresPresentes.push(j.id); });
-    if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
-    salvarSelecao();
-    exibirJogadoresPresentes();
+        .map(j => j.id)
+        .filter(id => !jogadoresPresentes.includes(id));
+    marcarVariosPresencaDB(ids);
+    if (ids.length && navigator.vibrate) navigator.vibrate([30, 50, 30]);
 };
 
 window.marcarTodosAvulsos = function() {
-    Object.values(jogadores)
+    if (papelNoGrupo !== 'admin' || presencaTravada) return;
+    const ids = Object.values(jogadores)
         .filter(j => j.tipo === 'avulso')
-        .forEach(j => { if (!jogadoresPresentes.includes(j.id)) jogadoresPresentes.push(j.id); });
-    if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
-    salvarSelecao();
-    exibirJogadoresPresentes();
+        .map(j => j.id)
+        .filter(id => !jogadoresPresentes.includes(id));
+    marcarVariosPresencaDB(ids);
+    if (ids.length && navigator.vibrate) navigator.vibrate([30, 50, 30]);
 };
 
 window.limparTodosCheckbox = function() {
-    jogadoresPresentes = [];
-    localStorage.removeItem('jogadoresPresentesSelecionados');
+    if (papelNoGrupo !== 'admin') return;
+    limparPresencaDB();
     if (navigator.vibrate) navigator.vibrate(50);
     document.getElementById('teamsContainer').style.display = 'none';
     document.getElementById('balanceInfo').style.display = 'none';
     ultimaDistribuicao = null;
     timesFormados = null;
-    exibirJogadoresPresentes();
 };
 
 function atualizarContador() {

@@ -51,6 +51,17 @@ function inicializarListeners(grupoId) {
         if (currentSection === 'historico') exibirHistorico();
     });
 
+    database.ref(`grupos/${grupoId}/presencaAtual`).on('value', (snapshot) => {
+        jogadoresPresentes = Object.keys(snapshot.val() || {});
+        exibirJogadoresPresentes();
+        if (document.querySelector('.content-section.active')?.id === 'gestao') exibirCorrecaoPresenca();
+    });
+
+    database.ref(`grupos/${grupoId}/presencaTravada`).on('value', (snapshot) => {
+        presencaTravada = snapshot.val() === true;
+        if (document.querySelector('.content-section.active')?.id === 'separar') exibirJogadoresPresentes();
+    });
+
     database.ref('.info/connected').on('value', (snapshot) => {
         isOnline = snapshot.val() === true;
         updateSyncStatus(isOnline ? 'synced' : 'offline');
@@ -63,6 +74,8 @@ function desligarListeners(grupoId) {
     database.ref(`grupos/${grupoId}/sessoes`).off();
     database.ref(`grupos/${grupoId}/restricoes`).off();
     database.ref(`grupos/${grupoId}/historicoTimes`).off();
+    database.ref(`grupos/${grupoId}/presencaAtual`).off();
+    database.ref(`grupos/${grupoId}/presencaTravada`).off();
 }
 
 // ---------- Jogadores ----------
@@ -172,6 +185,53 @@ function excluirHistoricoTimesDB(id) {
         localStorage.setItem('historicoTimesFutebol', JSON.stringify(local));
         historicoTimes = local;
         exibirHistorico();
+    }
+}
+
+// ---------- Presença ----------
+
+function marcarPresencaDB(jogadorId, presente) {
+    if (database && grupoAtualId) {
+        updateSyncStatus('syncing');
+        if (presente) {
+            database.ref(`grupos/${grupoAtualId}/presencaAtual/${jogadorId}`).set(true);
+        } else {
+            database.ref(`grupos/${grupoAtualId}/presencaAtual/${jogadorId}`).remove();
+        }
+    } else {
+        if (presente) {
+            if (!jogadoresPresentes.includes(jogadorId)) jogadoresPresentes.push(jogadorId);
+        } else {
+            jogadoresPresentes = jogadoresPresentes.filter(id => id !== jogadorId);
+        }
+        salvarSelecao();
+        exibirJogadoresPresentes();
+    }
+}
+
+function marcarVariosPresencaDB(jogadorIds) {
+    if (!jogadorIds.length) return;
+    if (database && grupoAtualId) {
+        updateSyncStatus('syncing');
+        const updates = {};
+        jogadorIds.forEach(id => { updates[id] = true; });
+        database.ref(`grupos/${grupoAtualId}/presencaAtual`).update(updates);
+    } else {
+        jogadorIds.forEach(id => { if (!jogadoresPresentes.includes(id)) jogadoresPresentes.push(id); });
+        salvarSelecao();
+        exibirJogadoresPresentes();
+    }
+}
+
+function limparPresencaDB() {
+    if (database && grupoAtualId) {
+        updateSyncStatus('syncing');
+        database.ref(`grupos/${grupoAtualId}/presencaAtual`).remove();
+        database.ref(`grupos/${grupoAtualId}/presencaTravada`).set(false);
+    } else {
+        jogadoresPresentes = [];
+        localStorage.removeItem('jogadoresPresentesSelecionados');
+        exibirJogadoresPresentes();
     }
 }
 

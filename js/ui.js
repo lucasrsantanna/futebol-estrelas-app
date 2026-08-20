@@ -28,6 +28,7 @@ window.showSection = function(sectionName) {
     else if (sectionName === 'separar')    exibirJogadoresPresentes();
     else if (sectionName === 'financeiro') mostrarAbaFinanceiro('sessoes');
     else if (sectionName === 'historico')  exibirHistorico();
+    else if (sectionName === 'gestao')     { exibirVinculosJogadores(); exibirCorrecaoPresenca(); }
 };
 
 // ---------- Sync status ----------
@@ -90,3 +91,16 @@ window.cancelarExclusao = function() {
     sessaoParaExcluir    = null;
     historicoParaExcluir = null;
 };
+
+// ---------- Menu por papel ----------
+
+function atualizarMenuPorPapel() {
+    const menuGestao = document.getElementById('menuGestao');
+    if (menuGestao) menuGestao.style.display = papelNoGrupo === 'admin' ? 'flex' : 'none';
+
+    const btnLimpar = document.getElementById('btnLimparPresenca');
+    if (btnLimpar) btnLimpar.style.display = papelNoGrupo === 'admin' ? 'flex' : 'none';
+
+    const btnMensalistas = document.getElementById('btnMarcarMensalistas');
+    if (btnMensalistas) btnMensalistas.style.display = papelNoGrupo === 'admin' ? 'flex' : 'none';
+}

@@ -234,6 +234,7 @@ window.confirmarTimes = function() {
     // Guard contra double-tap: flag dedicada porque mostrarModalFinanceiro() (finance.js linha 9)
     // restaura timesFormados = ultimaDistribuicao.times, tornando o guard timesFormados===null ineficaz.
     confirmacaoEmAndamento = true;
+    if (database && grupoAtualId) database.ref(`grupos/${grupoAtualId}/presencaTravada`).set(true);
     const timesParaSalvar = timesFormados;
     const genericosParaSalvar = genericosAdicionados;
 

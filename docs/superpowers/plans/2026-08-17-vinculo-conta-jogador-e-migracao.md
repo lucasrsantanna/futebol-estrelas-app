@@ -976,45 +976,278 @@ git commit -m "feat: remove edicao manual de estrela do cadastro e da edicao de 
 
 ---
 
-## Task 7: Presença — só marca, admin desfaz
+## Task 6.5: Sincroniza presença via Firebase (substitui localStorage)
+
+> Inserida depois da revisão da Task 7 original — presença precisa ser compartilhada em
+> tempo real entre dispositivos antes de qualquer regra de permissão por jogador fazer
+> sentido (ver `docs/superpowers/specs/2026-04-24-autenticacao-e-multi-tenant-design.md`,
+> seção 3, atualizada). Esta task só troca a fonte de dados; nenhuma regra de permissão
+> nova ainda — continua todo mundo podendo marcar/desmarcar qualquer jogador, exatamente
+> como hoje, só que sincronizado.
 
 **Files:**
-- Modify: `js/players.js:271-310` (`togglePresenca`, `limparTodosCheckbox`)
-- Modify: `index.html` (`id="btnLimparPresenca"` no botão "Limpar")
-- Modify: `js/ui.js` (`atualizarMenuPorPapel` também esconde o botão Limpar pra membro)
+- Modify: `js/firebase.js` (`inicializarListeners`, `desligarListeners`; novas funções `marcarPresencaDB`, `marcarVariosPresencaDB`, `limparPresencaDB`)
+- Modify: `js/players.js` (`togglePresenca`, `marcarTodosMensalistas`, `marcarTodosAvulsos`, `limparTodosCheckbox`)
 - Test: `tests/vinculo.spec.js`
 
 **Interfaces:**
-- Nenhuma função nova — adiciona guard de papel às duas funções existentes.
+- Produces:
+  - `function marcarPresencaDB(jogadorId: string, presente: boolean): void`
+  - `function marcarVariosPresencaDB(jogadorIds: string[]): void`
+  - `function limparPresencaDB(): void`
+- `jogadoresPresentes` (global, `state.js`) continua sendo a lista em memória que `teams.js`/`players.js` já consomem — só a fonte muda, de `localStorage` pra um listener Firebase.
+
+**Modelo de dados novo:**
+```
+/grupos/{grupoId}/presencaAtual/{jogadorId}: true   (chave presente = presente; ausente = não presente)
+```
 
 - [ ] **Step 1: Escrever o teste que falha**
 
+Adicionar a `tests/vinculo.spec.js`:
+
 ```js
-test.describe('Presença — só marca, admin desfaz', () => {
+test.describe('Presença sincronizada via Firebase', () => {
     test.beforeEach(async ({ page }) => {
         await fazerLogin(page);
         await page.locator('#mainApp').waitFor({ state: 'visible', timeout: 15000 });
     });
 
-    test('membro não consegue desmarcar presença já marcada', async ({ page }) => {
+    test('togglePresenca grava e remove em grupos/{id}/presencaAtual', async ({ page }) => {
         const jogadorId = await page.evaluate(async () => {
-            const j = await criarJogadorVinculado(grupoAtualId, 'uid-fake-presenca-' + Date.now(), 'Presença Teste');
+            const j = await criarJogadorVinculado(grupoAtualId, 'uid-fake-presenca-sync-' + Date.now(), 'Presença Sync Teste');
             return j.id;
         });
 
-        await page.evaluate((id) => { papelNoGrupo = 'admin'; togglePresenca(id); }, jogadorId);
-        let presente = await page.evaluate((id) => jogadoresPresentes.includes(id), jogadorId);
-        expect(presente).toBe(true);
+        await page.evaluate((id) => togglePresenca(id), jogadorId);
+        await page.waitForTimeout(500);
+        let val = await page.evaluate(async (id) => {
+            const snap = await database.ref(`grupos/${grupoAtualId}/presencaAtual/${id}`).get();
+            return snap.val();
+        }, jogadorId);
+        expect(val).toBe(true);
 
-        await page.evaluate((id) => { papelNoGrupo = 'membro'; togglePresenca(id); }, jogadorId);
-        presente = await page.evaluate((id) => jogadoresPresentes.includes(id), jogadorId);
-        expect(presente).toBe(true); // continua presente — membro não consegue desmarcar
-
-        await page.evaluate((id) => { papelNoGrupo = 'admin'; togglePresenca(id); }, jogadorId);
-        presente = await page.evaluate((id) => jogadoresPresentes.includes(id), jogadorId);
-        expect(presente).toBe(false); // admin consegue desmarcar
+        await page.evaluate((id) => togglePresenca(id), jogadorId);
+        await page.waitForTimeout(500);
+        val = await page.evaluate(async (id) => {
+            const snap = await database.ref(`grupos/${grupoAtualId}/presencaAtual/${id}`).get();
+            return snap.val();
+        }, jogadorId);
+        expect(val).toBeFalsy(); // ausente ou null — RTDB não guarda chave com valor null
 
         await page.evaluate((id) => database.ref(`grupos/${grupoAtualId}/jogadores/${id}`).remove(), jogadorId);
+    });
+});
+```
+
+- [ ] **Step 2: Rodar o teste e confirmar que falha**
+
+Run: `npx playwright test tests/vinculo.spec.js -g "Presença sincronizada"`
+Expected: FAIL — `presencaAtual/{id}` nunca é gravado (ainda grava só em `localStorage`)
+
+- [ ] **Step 3: Adicionar as funções de gravação em `js/firebase.js`**
+
+```js
+function marcarPresencaDB(jogadorId, presente) {
+    if (database && grupoAtualId) {
+        updateSyncStatus('syncing');
+        if (presente) {
+            database.ref(`grupos/${grupoAtualId}/presencaAtual/${jogadorId}`).set(true);
+        } else {
+            database.ref(`grupos/${grupoAtualId}/presencaAtual/${jogadorId}`).remove();
+        }
+    } else {
+        if (presente) {
+            if (!jogadoresPresentes.includes(jogadorId)) jogadoresPresentes.push(jogadorId);
+        } else {
+            jogadoresPresentes = jogadoresPresentes.filter(id => id !== jogadorId);
+        }
+        salvarSelecao();
+        exibirJogadoresPresentes();
+    }
+}
+
+function marcarVariosPresencaDB(jogadorIds) {
+    if (!jogadorIds.length) return;
+    if (database && grupoAtualId) {
+        updateSyncStatus('syncing');
+        const updates = {};
+        jogadorIds.forEach(id => { updates[id] = true; });
+        database.ref(`grupos/${grupoAtualId}/presencaAtual`).update(updates);
+    } else {
+        jogadorIds.forEach(id => { if (!jogadoresPresentes.includes(id)) jogadoresPresentes.push(id); });
+        salvarSelecao();
+        exibirJogadoresPresentes();
+    }
+}
+
+function limparPresencaDB() {
+    if (database && grupoAtualId) {
+        updateSyncStatus('syncing');
+        database.ref(`grupos/${grupoAtualId}/presencaAtual`).remove();
+    } else {
+        jogadoresPresentes = [];
+        localStorage.removeItem('jogadoresPresentesSelecionados');
+        exibirJogadoresPresentes();
+    }
+}
+```
+
+- [ ] **Step 4: Adicionar o listener em `inicializarListeners` e o `.off()` em `desligarListeners` (`js/firebase.js`)**
+
+Dentro de `inicializarListeners(grupoId)`, junto dos outros `database.ref(...).on('value', ...)`:
+
+```js
+    database.ref(`grupos/${grupoId}/presencaAtual`).on('value', (snapshot) => {
+        jogadoresPresentes = Object.keys(snapshot.val() || {});
+        exibirJogadoresPresentes();
+    });
+```
+
+Dentro de `desligarListeners(grupoId)`, junto dos outros `.off()`:
+
+```js
+    database.ref(`grupos/${grupoId}/presencaAtual`).off();
+```
+
+- [ ] **Step 5: Trocar as gravações locais por chamadas às novas funções em `js/players.js`**
+
+```js
+window.togglePresenca = function(id) {
+    const jaPresente = jogadoresPresentes.includes(id);
+    marcarPresencaDB(id, !jaPresente);
+    if (!jaPresente && navigator.vibrate) navigator.vibrate(30);
+};
+
+window.marcarTodosMensalistas = function() {
+    const ids = Object.values(jogadores)
+        .filter(j => (j.tipo || 'mensalista') === 'mensalista')
+        .map(j => j.id)
+        .filter(id => !jogadoresPresentes.includes(id));
+    marcarVariosPresencaDB(ids);
+    if (ids.length && navigator.vibrate) navigator.vibrate([30, 50, 30]);
+};
+
+window.marcarTodosAvulsos = function() {
+    const ids = Object.values(jogadores)
+        .filter(j => j.tipo === 'avulso')
+        .map(j => j.id)
+        .filter(id => !jogadoresPresentes.includes(id));
+    marcarVariosPresencaDB(ids);
+    if (ids.length && navigator.vibrate) navigator.vibrate([30, 50, 30]);
+};
+
+window.limparTodosCheckbox = function() {
+    limparPresencaDB();
+    if (navigator.vibrate) navigator.vibrate(50);
+    document.getElementById('teamsContainer').style.display = 'none';
+    document.getElementById('balanceInfo').style.display = 'none';
+    ultimaDistribuicao = null;
+    timesFormados = null;
+};
+```
+
+- [ ] **Step 6: Rodar o teste e confirmar que passa**
+
+Run: `npx playwright test tests/vinculo.spec.js -g "Presença sincronizada"`
+Expected: PASS
+
+- [ ] **Step 7: Rodar a suíte completa**
+
+Run: `npx playwright test`
+Expected: nenhuma regressão
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add js/firebase.js js/players.js tests/vinculo.spec.js
+git commit -m "feat: sincroniza presenca via Firebase em vez de localStorage"
+```
+
+---
+
+## Task 7: Presença — autocheckin com trava pós-confirmação
+
+**Files:**
+- Modify: `js/state.js` (nova variável `presencaTravada`)
+- Modify: `js/firebase.js` (listener de `presencaTravada`; `limparPresencaDB` também reseta a trava)
+- Modify: `js/teams.js` (`confirmarTimes` trava a presença)
+- Modify: `js/players.js` (`togglePresenca` ganha o guard de papel/dono + trava; `marcarTodosMensalistas`/`marcarTodosAvulsos` viram admin-only; `limparTodosCheckbox` ganha guard de admin)
+- Modify: `js/vinculo.js` (nova seção de correção manual de presença na Gestão)
+- Modify: `index.html` (`id="btnLimparPresenca"`; nova subseção em `#gestao`)
+- Modify: `js/ui.js` (`atualizarMenuPorPapel` esconde Limpar pra membro; `showSection` chama a nova função de correção)
+- Test: `tests/vinculo.spec.js`
+
+**Interfaces:**
+- Consumes: `marcarPresencaDB`, `marcarVariosPresencaDB`, `limparPresencaDB` (Task 6.5)
+- Produces:
+  - `function exibirCorrecaoPresenca(): void`
+  - `window.corrigirPresencaManual(jogadorId: string, presente: boolean): void` — admin-only, ignora `presencaTravada`
+
+- [ ] **Step 1: Escrever os testes que falham**
+
+```js
+test.describe('Presença — autocheckin com trava pós-confirmação', () => {
+    test.beforeEach(async ({ page }) => {
+        await fazerLogin(page);
+        await page.locator('#mainApp').waitFor({ state: 'visible', timeout: 15000 });
+    });
+
+    test('membro só marca/desmarca o próprio jogador; admin marca qualquer um', async ({ page }) => {
+        const { meuId, outroId } = await page.evaluate(async () => {
+            const meu = await criarJogadorVinculado(grupoAtualId, usuarioAtual.uid, 'Eu Presença Teste');
+            const outro = await criarJogadorVinculado(grupoAtualId, 'uid-fake-outro-' + Date.now(), 'Outro Presença Teste');
+            return { meuId: meu.id, outroId: outro.id };
+        });
+
+        await page.evaluate(() => { papelNoGrupo = 'membro'; });
+
+        await page.evaluate((id) => togglePresenca(id), outroId);
+        let presente = await page.evaluate((id) => jogadoresPresentes.includes(id), outroId);
+        expect(presente).toBe(false); // membro não conseguiu marcar o jogador de outra pessoa
+
+        await page.evaluate((id) => togglePresenca(id), meuId);
+        presente = await page.evaluate((id) => jogadoresPresentes.includes(id), meuId);
+        expect(presente).toBe(true); // membro conseguiu marcar o próprio jogador
+
+        await page.evaluate(() => { papelNoGrupo = 'admin'; });
+        await page.evaluate((id) => togglePresenca(id), outroId);
+        presente = await page.evaluate((id) => jogadoresPresentes.includes(id), outroId);
+        expect(presente).toBe(true); // admin marca qualquer jogador
+
+        await page.evaluate(({ meuId, outroId }) => {
+            database.ref(`grupos/${grupoAtualId}/jogadores/${meuId}`).remove();
+            database.ref(`grupos/${grupoAtualId}/jogadores/${outroId}`).remove();
+            database.ref(`grupos/${grupoAtualId}/presencaAtual/${meuId}`).remove();
+            database.ref(`grupos/${grupoAtualId}/presencaAtual/${outroId}`).remove();
+        }, { meuId, outroId });
+    });
+
+    test('presença travada bloqueia todo mundo, exceto correção manual do admin', async ({ page }) => {
+        const jogadorId = await page.evaluate(async () => {
+            const j = await criarJogadorVinculado(grupoAtualId, usuarioAtual.uid, 'Trava Presença Teste');
+            return j.id;
+        });
+
+        await page.evaluate(() => { papelNoGrupo = 'admin'; presencaTravada = true; });
+
+        await page.evaluate((id) => togglePresenca(id), jogadorId);
+        let presente = await page.evaluate((id) => jogadoresPresentes.includes(id), jogadorId);
+        expect(presente).toBe(false); // trava bloqueia até o admin pelo fluxo normal
+
+        await page.evaluate((id) => corrigirPresencaManual(id, true), jogadorId);
+        await page.waitForTimeout(500);
+        const val = await page.evaluate(async (id) => {
+            const snap = await database.ref(`grupos/${grupoAtualId}/presencaAtual/${id}`).get();
+            return snap.val();
+        }, jogadorId);
+        expect(val).toBe(true); // correção manual ignora a trava
+
+        await page.evaluate(() => { presencaTravada = false; });
+        await page.evaluate((id) => {
+            database.ref(`grupos/${grupoAtualId}/jogadores/${id}`).remove();
+            database.ref(`grupos/${grupoAtualId}/presencaAtual/${id}`).remove();
+        }, jogadorId);
     });
 
     test('botão Limpar some para membro', async ({ page }) => {
@@ -1028,52 +1261,153 @@ test.describe('Presença — só marca, admin desfaz', () => {
 });
 ```
 
-- [ ] **Step 2: Rodar o teste e confirmar que falha**
+- [ ] **Step 2: Rodar os testes e confirmar que falham**
 
-Run: `npx playwright test tests/vinculo.spec.js -g "só marca, admin desfaz"`
-Expected: FAIL — membro consegue desmarcar; `#btnLimparPresenca` não existe
+Run: `npx playwright test tests/vinculo.spec.js -g "autocheckin com trava"`
+Expected: FAIL — membro consegue marcar jogador de outra pessoa; `presencaTravada`/`corrigirPresencaManual` não existem; `#btnLimparPresenca` não existe
 
-- [ ] **Step 3: Adicionar o `id` ao botão Limpar em `index.html`**
+- [ ] **Step 3: Adicionar `presencaTravada` em `js/state.js`**
+
+```js
+let presencaTravada = false;
+```
+
+- [ ] **Step 4: Adicionar o `id` ao botão Limpar e a subseção de correção em `index.html`**
 
 ```html
                         <button class="quick-action-btn limpar" id="btnLimparPresenca" onclick="limparTodosCheckbox()">✕ Limpar</button>
 ```
 
-- [ ] **Step 4: Adicionar o guard em `js/players.js`**
+Dentro de `<div id="gestao" class="content-section">`, depois do bloco "Aprovação..."/"Vínculos de Jogadores":
+
+```html
+                <div class="form-group">
+                    <label>Correção Manual de Presença</label>
+                    <p style="color:#666;font-size:13px;margin-bottom:10px;">Corrija a presença de um jogador mesmo com a rodada travada.</p>
+                    <div id="listaCorrecaoPresenca"></div>
+                </div>
+```
+
+- [ ] **Step 5: Adicionar o listener de `presencaTravada` e travar `confirmarTimes` (`js/firebase.js`, `js/teams.js`)**
+
+Em `inicializarListeners(grupoId)`, junto do listener de `presencaAtual` já existente (Task 6.5) — trocar o listener de `presencaAtual` para também atualizar a Gestão quando ativa, e adicionar o de `presencaTravada`:
+
+```js
+    database.ref(`grupos/${grupoId}/presencaAtual`).on('value', (snapshot) => {
+        jogadoresPresentes = Object.keys(snapshot.val() || {});
+        exibirJogadoresPresentes();
+        if (document.querySelector('.content-section.active')?.id === 'gestao') exibirCorrecaoPresenca();
+    });
+
+    database.ref(`grupos/${grupoId}/presencaTravada`).on('value', (snapshot) => {
+        presencaTravada = snapshot.val() === true;
+    });
+```
+
+Em `desligarListeners(grupoId)`:
+
+```js
+    database.ref(`grupos/${grupoId}/presencaTravada`).off();
+```
+
+Em `limparPresencaDB()` (`js/firebase.js`), adicionar o reset da trava junto da limpeza:
+
+```js
+function limparPresencaDB() {
+    if (database && grupoAtualId) {
+        updateSyncStatus('syncing');
+        database.ref(`grupos/${grupoAtualId}/presencaAtual`).remove();
+        database.ref(`grupos/${grupoAtualId}/presencaTravada`).set(false);
+    } else {
+        jogadoresPresentes = [];
+        localStorage.removeItem('jogadoresPresentesSelecionados');
+        exibirJogadoresPresentes();
+    }
+}
+```
+
+Em `js/teams.js`, dentro de `window.confirmarTimes`, logo após `confirmacaoEmAndamento = true;`:
+
+```js
+    if (database && grupoAtualId) database.ref(`grupos/${grupoAtualId}/presencaTravada`).set(true);
+```
+
+- [ ] **Step 6: Adicionar os guards em `js/players.js`**
 
 ```js
 window.togglePresenca = function(id) {
-    const jaPresente = jogadoresPresentes.includes(id);
-    if (jaPresente && papelNoGrupo !== 'admin') return;
-
-    const idx = jogadoresPresentes.indexOf(id);
-    if (idx > -1) {
-        jogadoresPresentes.splice(idx, 1);
-    } else {
-        jogadoresPresentes.push(id);
-        if (navigator.vibrate) navigator.vibrate(30);
+    if (presencaTravada) return;
+    if (papelNoGrupo !== 'admin') {
+        const meuJogador = Object.values(jogadores).find(j => j.userId === usuarioAtual.uid);
+        if (!meuJogador || meuJogador.id !== id) return;
     }
-    salvarSelecao();
-    exibirJogadoresPresentes();
+    const jaPresente = jogadoresPresentes.includes(id);
+    marcarPresencaDB(id, !jaPresente);
+    if (!jaPresente && navigator.vibrate) navigator.vibrate(30);
 };
-```
 
-```js
+window.marcarTodosMensalistas = function() {
+    if (papelNoGrupo !== 'admin' || presencaTravada) return;
+    const ids = Object.values(jogadores)
+        .filter(j => (j.tipo || 'mensalista') === 'mensalista')
+        .map(j => j.id)
+        .filter(id => !jogadoresPresentes.includes(id));
+    marcarVariosPresencaDB(ids);
+    if (ids.length && navigator.vibrate) navigator.vibrate([30, 50, 30]);
+};
+
+window.marcarTodosAvulsos = function() {
+    if (papelNoGrupo !== 'admin' || presencaTravada) return;
+    const ids = Object.values(jogadores)
+        .filter(j => j.tipo === 'avulso')
+        .map(j => j.id)
+        .filter(id => !jogadoresPresentes.includes(id));
+    marcarVariosPresencaDB(ids);
+    if (ids.length && navigator.vibrate) navigator.vibrate([30, 50, 30]);
+};
+
 window.limparTodosCheckbox = function() {
     if (papelNoGrupo !== 'admin') return;
-
-    jogadoresPresentes = [];
-    localStorage.removeItem('jogadoresPresentesSelecionados');
+    limparPresencaDB();
     if (navigator.vibrate) navigator.vibrate(50);
     document.getElementById('teamsContainer').style.display = 'none';
     document.getElementById('balanceInfo').style.display = 'none';
     ultimaDistribuicao = null;
     timesFormados = null;
-    exibirJogadoresPresentes();
 };
 ```
 
-- [ ] **Step 5: Esconder o botão Limpar pra membro em `js/ui.js`**
+- [ ] **Step 7: Adicionar a correção manual em `js/vinculo.js`**
+
+```js
+function exibirCorrecaoPresenca() {
+    const container = document.getElementById('listaCorrecaoPresenca');
+    container.innerHTML = Object.values(jogadores).map(j => {
+        const presente = jogadoresPresentes.includes(j.id);
+        return `
+            <div class="list-item ${presente ? 'checked' : ''}" onclick="corrigirPresencaManual('${j.id}', ${!presente})">
+                <div class="item-content">
+                    <div class="player-info">
+                        <div class="player-name">${j.nome}</div>
+                        <div class="player-stars"><span class="star-count">${presente ? 'Presente' : 'Ausente'}</span></div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+window.corrigirPresencaManual = function(jogadorId, presente) {
+    if (papelNoGrupo !== 'admin' || !database || !grupoAtualId) return;
+    if (presente) {
+        database.ref(`grupos/${grupoAtualId}/presencaAtual/${jogadorId}`).set(true);
+    } else {
+        database.ref(`grupos/${grupoAtualId}/presencaAtual/${jogadorId}`).remove();
+    }
+};
+```
+
+- [ ] **Step 8: Esconder o botão Limpar pra membro e chamar a correção ao abrir a Gestão (`js/ui.js`)**
 
 ```js
 function atualizarMenuPorPapel() {
@@ -1085,21 +1419,27 @@ function atualizarMenuPorPapel() {
 }
 ```
 
-- [ ] **Step 6: Rodar o teste e confirmar que passa**
+Em `showSection`, o branch de `'gestao'` passa a chamar as duas funções:
 
-Run: `npx playwright test tests/vinculo.spec.js -g "só marca, admin desfaz"`
-Expected: PASS
+```js
+    else if (sectionName === 'gestao')     { exibirVinculosJogadores(); exibirCorrecaoPresenca(); }
+```
 
-- [ ] **Step 7: Rodar a suíte completa**
+- [ ] **Step 9: Rodar os testes e confirmar que passam**
+
+Run: `npx playwright test tests/vinculo.spec.js -g "autocheckin com trava"`
+Expected: PASS — 3 testes passaram
+
+- [ ] **Step 10: Rodar a suíte completa**
 
 Run: `npx playwright test`
 Expected: nenhuma regressão
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 11: Commit**
 
 ```bash
-git add index.html js/players.js js/ui.js tests/vinculo.spec.js
-git commit -m "feat: membro so marca presenca, desfazer e exclusivo do admin"
+git add js/state.js js/firebase.js js/teams.js js/players.js js/vinculo.js index.html js/ui.js tests/vinculo.spec.js
+git commit -m "feat: presenca autocheckin com trava pos-confirmacao e correcao manual"
 ```
 
 ---

@@ -13,6 +13,14 @@ const FIREBASE_CONFIG_PRODUCAO = {
     appId: "1:96538381574:web:dee50b846e46a898aeaecf"
 };
 
+function _comUserIdNulo(dadosJogadores) {
+    const resultado = {};
+    for (const [id, jogador] of Object.entries(dadosJogadores)) {
+        resultado[id] = { userId: null, ...jogador };
+    }
+    return resultado;
+}
+
 window.migrarDadosParaGrupo = async function(grupoId) {
     if (!grupoId) { console.error('Informe o grupoId'); return; }
     if (!usuarioAtual) { console.error('Faça login antes de migrar'); return; }
@@ -39,8 +47,9 @@ window.migrarDadosParaGrupo = async function(grupoId) {
             continue;
         }
 
-        await database.ref(`grupos/${grupoId}/${entidade}`).set(dados);
-        console.log(`${entidade}: ${Object.keys(dados).length} registros migrados.`);
+        const dadosParaGravar = entidade === 'jogadores' ? _comUserIdNulo(dados) : dados;
+        await database.ref(`grupos/${grupoId}/${entidade}`).set(dadosParaGravar);
+        console.log(`${entidade}: ${Object.keys(dadosParaGravar).length} registros migrados.`);
     }
 
     console.log('Migração concluída!');
