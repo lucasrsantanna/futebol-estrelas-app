@@ -127,15 +127,15 @@ function exibirPendencias() {
     const container = document.getElementById('resumoPendencias');
     const pendencias = {};
 
+    // Sessão fechada é registro congelado: o tipo atual do jogador nunca entra nessa conta.
     Object.values(sessoes).forEach(sessao => {
         Object.keys(sessao.pagamentos).forEach(jId => {
             if (sessao.pagamentos[jId] === 'pendente') {
                 const j = jogadores[jId];
-                if (j?.tipo === 'avulso') {
-                    if (!pendencias[jId]) pendencias[jId] = { nome: j.nome, total: 0, jogos: 0 };
-                    pendencias[jId].total += sessao.valorDiaria;
-                    pendencias[jId].jogos++;
-                }
+                if (!j) return;
+                if (!pendencias[jId]) pendencias[jId] = { nome: j.nome, total: 0, jogos: 0 };
+                pendencias[jId].total += sessao.valorDiaria;
+                pendencias[jId].jogos++;
             }
         });
     });
@@ -175,7 +175,11 @@ function exibirControlePagamentos() {
     }
 
     container.innerHTML = lista.map(sessao => {
-        const avulsos = sessao.todosPresentes.map(id => jogadores[id]).filter(j => j?.tipo === 'avulso');
+        // Sessão fechada é registro congelado: quem entra na cobrança é definido pelo valor
+        // gravado em pagamentos naquela sessão, nunca pelo tipo atual do jogador.
+        const avulsos = sessao.todosPresentes
+            .map(id => jogadores[id])
+            .filter(j => j && (sessao.pagamentos[j.id] === 'pago' || sessao.pagamentos[j.id] === 'pendente'));
 
         if (!avulsos.length) return `
             <div class="pagamento-item" style="opacity:0.7;">

@@ -205,6 +205,12 @@ function excluirHistoricoTimesDB(id) {
 // ---------- Pagamentos ----------
 
 window.marcarPagamento = function(sessaoId, jogadorId, status) {
+    // Sessão fechada é registro congelado: nunca sobrescrever um "mensalista" histórico,
+    // mesmo que a chamada venha de um lugar que não devesse ter deixado isso acontecer.
+    if (sessoes[sessaoId]?.pagamentos?.[jogadorId] === 'mensalista') {
+        console.error(`marcarPagamento recusado: sessoes/${sessaoId}/pagamentos/${jogadorId} está gravado como "mensalista" e não pode ser sobrescrito.`);
+        return;
+    }
     if (database) {
         updateSyncStatus('syncing');
         database.ref(`sessoes/${sessaoId}/pagamentos/${jogadorId}`).set(status);
