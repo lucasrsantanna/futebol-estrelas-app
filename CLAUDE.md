@@ -1,5 +1,21 @@
 # CLAUDE.md — Gerenciador de Times de Futebol
 
+## ⚠️ REGRA OBRIGATÓRIA — INÍCIO DE TODA SESSÃO
+Antes de fazer QUALQUER alteração de código nesta sessão, rode primeiro, nessa ordem:
+
+1. `git fetch`
+2. `git log HEAD..origin/homologacao --oneline`
+   → Se isso devolver algo, significa que existem commits no GitHub que este PC não tem. Rode `git pull` antes de continuar.
+3. `git status`
+4. `git log origin/homologacao..HEAD --oneline`
+   → Se isso devolver algo, significa que existem commits locais neste PC que nunca foram enviados ao GitHub. Rode `git push` antes de fazer qualquer coisa nova.
+
+Nunca inicie trabalho novo, e nunca rode `firebase deploy`, sem essas quatro checagens confirmando que o repositório local e o remoto estão sincronizados.
+
+Isso existe porque o histórico do projeto já teve casos de trabalho perdido/divergente por sessões anteriores que não sincronizaram com o GitHub antes de encerrar ou trocar de computador.
+
+---
+
 ## ⚠️ REGRA MAIS IMPORTANTE
 O Firebase de produção já está ativo com dados reais (jogadores, sessões de pagamento,
 histórico de times, restrições). NUNCA recriar, limpar ou migrar o banco de dados.
